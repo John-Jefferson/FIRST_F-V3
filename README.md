@@ -9,4 +9,4 @@ Dev: NAGA, Alimodin P.
 
 
 
-UI DESIGNER - ITLIONG  
+UI DESIGNER: ITLIONG, Luiz Joaquin A.  
