@@ -1,12 +1,10 @@
 # FIRST_F-V3
-bituin ng mindanao
+SCRUM MASTER: LEONARDO, John Jefferson
 
+UI DESIGNER: ITLIONG, Luiz Joaquin A.
 
+DB ADMIN: ALMOZARA, Aldrin
 
-Dev: NAGA, Alimodin P.
+DEV: Naga, Alimodin
 
-
-
-
-
-UI DESIGNER: ITLIONG, Luiz Joaquin A.  
+TESTER: Daguimol, Michael Vincent
