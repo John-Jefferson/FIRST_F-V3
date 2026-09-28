@@ -5,6 +5,6 @@ UI DESIGNER: ITLIONG, Luiz Joaquin A.
 
 DB ADMIN: ALMOZARA, Aldrin
 
-DEV: Naga, Alimodin
+DEV: NAGA, Alimodin
 
 TESTER: Daguimol, Michael Vincent
