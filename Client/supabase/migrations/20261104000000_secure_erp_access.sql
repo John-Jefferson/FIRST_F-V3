@@ -1,3 +1,10 @@
+-- ==========================================
+-- Migration: Secure ERP Access Policies
+-- File: 20261104000000_secure_erp_access.sql
+-- Description: Establishes baseline Row Level Security (RLS)
+--              policies for authenticated user session access.
+-- ==========================================
+
 begin;
 
 create table if not exists public.app_profiles (
