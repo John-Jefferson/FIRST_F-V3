@@ -1043,7 +1043,7 @@ function Dashboard({ user, users, customers, data, dataError, dataLoading, onRel
         {appError && <div className="app-notice"><Alert message={{ type: 'error', text: appError }} /><button className="icon-button" onClick={clearError} aria-label="Dismiss error">×</button></div>}
         {currentPage.id === 'dashboard' && <Overview user={user} users={users} data={data} onNavigate={setActivePage} />}
         {currentPage.id === 'customers' && <CustomersPage user={user} users={users} customers={customers} onSave={onCustomerSave} onChangeState={onCustomerState} />}
-        {['products', 'hr', 'sales', 'payments'].includes(currentPage.id) && <RecordsPage section={currentPage.id} user={user} users={users} data={data} customers={customers} onSave={onRecordSave} onChangeState={onRecordState} />}
+        {['products', 'hr', 'sales', 'payments'].includes(currentPage.id) && <RecordsPage key={currentPage.id} section={currentPage.id} user={user} users={users} data={data} customers={customers} onSave={onRecordSave} onChangeState={onRecordState} />}
         {currentPage.id === 'reports' && <ReportsPage user={user} users={users} data={data} customers={customers} />}
         {currentPage.id === 'users' && <UserManagement user={user} users={users} onSave={onUserSave} onDelete={onUserDelete} onStatus={onUserStatus} onPermissions={onUserPermissions} />}
         <footer className="dashboard-footer"><Brand compact /><span>© 2026 Hope, Inc. ERP · All rights reserved.</span></footer>

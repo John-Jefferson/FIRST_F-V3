@@ -1,0 +1,242 @@
+[
+  {
+    "id": "S1-TST-01",
+    "sprint": 1,
+    "week": "1",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "Sprint 1 test plan and acceptance criteria",
+    "due_day": "3",
+    "sheet_status": "In progress"
+  },
+  {
+    "id": "S1-TST-02",
+    "sprint": 1,
+    "week": "2",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "Test cases: register, login and logout, set and reset password (expired and reused token)",
+    "due_day": "7",
+    "sheet_status": "In progress"
+  },
+  {
+    "id": "S1-TST-03",
+    "sprint": 1,
+    "week": "2",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "Test cases: User Management (add, edit, block/unblock, approve, designate admin; Admin cannot see or edit Superadmin; last-superadmin guard)",
+    "due_day": "8",
+    "sheet_status": "In progress"
+  },
+  {
+    "id": "S1-TST-04",
+    "sprint": 1,
+    "week": "2",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "Permission matrix tests (superadmin/admin/user x each right), using registered and approved test accounts; menu, buttons and server all follow the rights",
+    "due_day": "9",
+    "sheet_status": "In progress"
+  },
+  {
+    "id": "S1-TST-05",
+    "sprint": 1,
+    "week": "2",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "Automated smoke test: login and main page",
+    "due_day": "9",
+    "sheet_status": "Merged"
+  },
+  {
+    "id": "S1-TST-06",
+    "sprint": 1,
+    "week": "2",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "Bug reports and fix verification",
+    "due_day": "9",
+    "sheet_status": "In progress"
+  },
+  {
+    "id": "S2-TST-01",
+    "sprint": 2,
+    "week": "3",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "Test cases: customer module",
+    "due_day": "3",
+    "sheet_status": "Not Tested"
+  },
+  {
+    "id": "S2-TST-02",
+    "sprint": 2,
+    "week": "3",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "Test cases: product and price history",
+    "due_day": "5",
+    "sheet_status": "Not Tested"
+  },
+  {
+    "id": "S2-TST-03",
+    "sprint": 2,
+    "week": "4",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "Soft delete/restore tests, incl. delete blocked by active children",
+    "due_day": "7",
+    "sheet_status": "Not Tested"
+  },
+  {
+    "id": "S2-TST-04",
+    "sprint": 2,
+    "week": "4",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "Per-right permission tests for customer and product (Add/Edit/Delete, price rights)",
+    "due_day": "8",
+    "sheet_status": "Not Tested"
+  },
+  {
+    "id": "S2-TST-05",
+    "sprint": 2,
+    "week": "4",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "Regression test of Sprint 1",
+    "due_day": "9",
+    "sheet_status": "In progress"
+  },
+  {
+    "id": "S2-TST-06",
+    "sprint": 2,
+    "week": "4",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "Bug reports and fix verification",
+    "due_day": "9",
+    "sheet_status": "Not Tested"
+  },
+  {
+    "id": "S3-TST-01",
+    "sprint": 3,
+    "week": "5",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "Test cases: department and job",
+    "due_day": "3",
+    "sheet_status": "Not started"
+  },
+  {
+    "id": "S3-TST-02",
+    "sprint": 3,
+    "week": "5",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "Test cases: employee",
+    "due_day": "5",
+    "sheet_status": "Not started"
+  },
+  {
+    "id": "S3-TST-03",
+    "sprint": 3,
+    "week": "6",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "Job history tests (effective date, salary)",
+    "due_day": "7",
+    "sheet_status": "Not started"
+  },
+  {
+    "id": "S3-TST-04",
+    "sprint": 3,
+    "week": "6",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "Salary visibility and HR per-right permission tests",
+    "due_day": "8",
+    "sheet_status": "Not started"
+  },
+  {
+    "id": "S3-TST-05",
+    "sprint": 3,
+    "week": "6",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "Regression test of Sprints 1-2",
+    "due_day": "9",
+    "sheet_status": "Not started"
+  },
+  {
+    "id": "S3-TST-06",
+    "sprint": 3,
+    "week": "6",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "Bug reports and fix verification",
+    "due_day": "9",
+    "sheet_status": "Not started"
+  },
+  {
+    "id": "S4-TST-01",
+    "sprint": 4,
+    "week": "7",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "Test cases: sales transaction and price-as-of-date",
+    "due_day": "5",
+    "sheet_status": "Not started"
+  },
+  {
+    "id": "S4-TST-02",
+    "sprint": 4,
+    "week": "8",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "Payment and balance tests",
+    "due_day": "7",
+    "sheet_status": "Not started"
+  },
+  {
+    "id": "S4-TST-03",
+    "sprint": 4,
+    "week": "8",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "Report tests: all seven reports (date range, Top N, per-report rights, Print / Save as PDF)",
+    "due_day": "8",
+    "sheet_status": "Not started"
+  },
+  {
+    "id": "S4-TST-04",
+    "sprint": 4,
+    "week": "8",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "End-to-end test: register, approve, assign rights, login, sell, pay, run reports",
+    "due_day": "8",
+    "sheet_status": "Not started"
+  },
+  {
+    "id": "S4-TST-05",
+    "sprint": 4,
+    "week": "8",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "Full regression across all modules",
+    "due_day": "9",
+    "sheet_status": "Not started"
+  },
+  {
+    "id": "S4-TST-06",
+    "sprint": 4,
+    "week": "8",
+    "role": "Tester",
+    "assignee": "Vince",
+    "task": "Final test sign-off report",
+    "due_day": "9",
+    "sheet_status": "Not started"
+  }
+]

@@ -1,0 +1,25 @@
+﻿Task ID,Sprint,Role,Assignee,Requirement,Plan status,Evidence / limitation
+S1-TST-01,1,Tester,Vince,Sprint 1 test plan and acceptance criteria,In progress,No completed test evidence provided; needs dedicated staging workflow and acceptance evidence.
+S1-TST-02,1,Tester,Vince,"Test cases: register, login and logout, set and reset password (expired and reused token)",In progress,"Login and logout passed for all three roles. Registration submission, set/reset passwords, token expiry and reuse not verified."
+S1-TST-03,1,Tester,Vince,"Test cases: User Management (add, edit, block/unblock, approve, designate admin; Admin cannot see or edit Superadmin; last-superadmin guard)",In progress,No completed test evidence provided; needs dedicated staging workflow and acceptance evidence.
+S1-TST-04,1,Tester,Vince,"Permission matrix tests (superadmin/admin/user x each right), using registered and approved test accounts; menu, buttons and server all follow the rights",In progress,Role identity and visible navigation passed; 36 per-action permissions and backend enforcement untested.
+S1-TST-05,1,Tester,Vince,Automated smoke test: login and main page,Merged,Existing five smoke tests and login/navigation UI tests passed in user-provided logs; PR link not supplied.
+S1-TST-06,1,Tester,Vince,Bug reports and fix verification,In progress,Automation setup failures and test selector fixed; no confirmed application defect closure or PR shown.
+S2-TST-01,2,Tester,Vince,Test cases: customer module,Not Tested,No completed test evidence provided; needs dedicated staging workflow and acceptance evidence.
+S2-TST-02,2,Tester,Vince,Test cases: product and price history,Not Tested,No completed test evidence provided; needs dedicated staging workflow and acceptance evidence.
+S2-TST-03,2,Tester,Vince,"Soft delete/restore tests, incl. delete blocked by active children",Not Tested,No completed test evidence provided; needs dedicated staging workflow and acceptance evidence.
+S2-TST-04,2,Tester,Vince,"Per-right permission tests for customer and product (Add/Edit/Delete, price rights)",Not Tested,No completed test evidence provided; needs dedicated staging workflow and acceptance evidence.
+S2-TST-05,2,Tester,Vince,Regression test of Sprint 1,In progress,Partial regression: role and smoke suites rerun. Entire Sprint 1 scope not verified.
+S2-TST-06,2,Tester,Vince,Bug reports and fix verification,Not Tested,No completed test evidence provided; needs dedicated staging workflow and acceptance evidence.
+S3-TST-01,3,Tester,Vince,Test cases: department and job,Not started,No completed test evidence provided; needs dedicated staging workflow and acceptance evidence.
+S3-TST-02,3,Tester,Vince,Test cases: employee,Not started,No completed test evidence provided; needs dedicated staging workflow and acceptance evidence.
+S3-TST-03,3,Tester,Vince,"Job history tests (effective date, salary)",Not started,No completed test evidence provided; needs dedicated staging workflow and acceptance evidence.
+S3-TST-04,3,Tester,Vince,Salary visibility and HR per-right permission tests,Not started,No completed test evidence provided; needs dedicated staging workflow and acceptance evidence.
+S3-TST-05,3,Tester,Vince,Regression test of Sprints 1-2,Not started,No completed test evidence provided; needs dedicated staging workflow and acceptance evidence.
+S3-TST-06,3,Tester,Vince,Bug reports and fix verification,Not started,No completed test evidence provided; needs dedicated staging workflow and acceptance evidence.
+S4-TST-01,4,Tester,Vince,Test cases: sales transaction and price-as-of-date,Not started,No completed test evidence provided; needs dedicated staging workflow and acceptance evidence.
+S4-TST-02,4,Tester,Vince,Payment and balance tests,Not started,No completed test evidence provided; needs dedicated staging workflow and acceptance evidence.
+S4-TST-03,4,Tester,Vince,"Report tests: all seven reports (date range, Top N, per-report rights, Print / Save as PDF)",Not started,No completed test evidence provided; needs dedicated staging workflow and acceptance evidence.
+S4-TST-04,4,Tester,Vince,"End-to-end test: register, approve, assign rights, login, sell, pay, run reports",Not started,No completed test evidence provided; needs dedicated staging workflow and acceptance evidence.
+S4-TST-05,4,Tester,Vince,Full regression across all modules,Not started,No completed test evidence provided; needs dedicated staging workflow and acceptance evidence.
+S4-TST-06,4,Tester,Vince,Final test sign-off report,Not started,No completed test evidence provided; needs dedicated staging workflow and acceptance evidence.
