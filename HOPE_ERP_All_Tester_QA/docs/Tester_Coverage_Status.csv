@@ -1,0 +1,25 @@
+Task ID,Sprint,Task,Spreadsheet status,QA evidence classification,Next requirement
+S1-TST-01,1,Sprint 1 test plan and acceptance criteria,In progress,"Partial historical checks, full acceptance not verified",Execute on authorized staging with test accounts and capture pass/fail evidence
+S1-TST-02,1,"Test cases: register, login and logout, set and reset password (expired and reused token)",In progress,"Partial historical checks, full acceptance not verified",Execute on authorized staging with test accounts and capture pass/fail evidence
+S1-TST-03,1,"Test cases: User Management (add, edit, block/unblock, approve, designate admin; Admin cannot see or edit Superadmin; last-superadmin guard)",In progress,"Partial historical checks, full acceptance not verified",Execute on authorized staging with test accounts and capture pass/fail evidence
+S1-TST-04,1,"Permission matrix tests (superadmin/admin/user x each right), using registered and approved test accounts; menu, buttons and server all follow the rights",In progress,"Partial historical checks, full acceptance not verified",Execute on authorized staging with test accounts and capture pass/fail evidence
+S1-TST-05,1,Automated smoke test: login and main page,Merged,Previous UI smoke runs; PR merged status unverified,Execute on authorized staging with test accounts and capture pass/fail evidence
+S1-TST-06,1,Bug reports and fix verification,In progress,"Partial historical checks, full acceptance not verified",Execute on authorized staging with test accounts and capture pass/fail evidence
+S2-TST-01,2,Test cases: customer module,Not Tested,Not verified on live ERP,Execute on authorized staging with test accounts and capture pass/fail evidence
+S2-TST-02,2,Test cases: product and price history,Not Tested,Not verified on live ERP,Execute on authorized staging with test accounts and capture pass/fail evidence
+S2-TST-03,2,"Soft delete/restore tests, incl. delete blocked by active children",Not Tested,Not verified on live ERP,Execute on authorized staging with test accounts and capture pass/fail evidence
+S2-TST-04,2,"Per-right permission tests for customer and product (Add/Edit/Delete, price rights)",Not Tested,Not verified on live ERP,Execute on authorized staging with test accounts and capture pass/fail evidence
+S2-TST-05,2,Regression test of Sprint 1,In progress,"Partial historical checks, full acceptance not verified",Execute on authorized staging with test accounts and capture pass/fail evidence
+S2-TST-06,2,Bug reports and fix verification,Not Tested,Not verified on live ERP,Execute on authorized staging with test accounts and capture pass/fail evidence
+S3-TST-01,3,Test cases: department and job,Not started,Not verified on live ERP,Execute on authorized staging with test accounts and capture pass/fail evidence
+S3-TST-02,3,Test cases: employee,Not started,Not verified on live ERP,Execute on authorized staging with test accounts and capture pass/fail evidence
+S3-TST-03,3,"Job history tests (effective date, salary)",Not started,Not verified on live ERP,Execute on authorized staging with test accounts and capture pass/fail evidence
+S3-TST-04,3,Salary visibility and HR per-right permission tests,Not started,Not verified on live ERP,Execute on authorized staging with test accounts and capture pass/fail evidence
+S3-TST-05,3,Regression test of Sprints 1-2,Not started,Not verified on live ERP,Execute on authorized staging with test accounts and capture pass/fail evidence
+S3-TST-06,3,Bug reports and fix verification,Not started,Not verified on live ERP,Execute on authorized staging with test accounts and capture pass/fail evidence
+S4-TST-01,4,Test cases: sales transaction and price-as-of-date,Not started,Not verified on live ERP,Execute on authorized staging with test accounts and capture pass/fail evidence
+S4-TST-02,4,Payment and balance tests,Not started,Not verified on live ERP,Execute on authorized staging with test accounts and capture pass/fail evidence
+S4-TST-03,4,"Report tests: all seven reports (date range, Top N, per-report rights, Print / Save as PDF)",Not started,Not verified on live ERP,Execute on authorized staging with test accounts and capture pass/fail evidence
+S4-TST-04,4,"End-to-end test: register, approve, assign rights, login, sell, pay, run reports",Not started,Not verified on live ERP,Execute on authorized staging with test accounts and capture pass/fail evidence
+S4-TST-05,4,Full regression across all modules,Not started,Not verified on live ERP,Execute on authorized staging with test accounts and capture pass/fail evidence
+S4-TST-06,4,Final test sign-off report,Not started,Not verified on live ERP,Execute on authorized staging with test accounts and capture pass/fail evidence
