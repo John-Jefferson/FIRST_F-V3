@@ -1,3 +1,10 @@
+-- ==========================================
+-- Migration: Admin-Only Write Protection
+-- File: 20261104010000_admin_only_erp_writes.sql
+-- Description: Restricts INSERT, UPDATE, and DELETE actions
+--              exclusively to administrator roles.
+-- ==========================================
+
 begin;
 
 revoke all on public.app_profiles from public, anon;
