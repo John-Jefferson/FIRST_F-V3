@@ -97,7 +97,7 @@ async function loadWorkspace(userId) {
   let users = [user];
   if (isAdmin(user)) {
     const { data: profiles, error } = await supabase.from('app_profiles').select('*').order('created_at');
-    if (error) throw new Error(`Could not load user accounts: ${error.message}`);
+  if (error) throw new Error(`Could not load user accounts: ${error.message}`);
     users = profiles.map(profileFromDatabase);
   }
   return { user, users, data: Object.fromEntries(entries) };
@@ -120,6 +120,30 @@ async function register({ email, password, firstName, lastName }) {
   });
 
   return error ? { error: error.message } : {};
+}
+async function signIn({ email, password }) {
+  if (!supabase) {
+    return { error: 'Supabase is not configured.' };
+  }
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: email.trim(),
+    password,
+  });
+
+  if (error) {
+  const message = error.message.toLowerCase();
+
+  if (message.includes('banned')) {
+    return {
+      error: 'This account is blocked. Contact an administrator.',
+    };
+  }
+
+  return { error: error.message };
+}
+
+return { user: data.user };
 }
 const MODULES = [
   { id: 'dashboard', label: 'Overview', initials: 'OV' },
@@ -297,6 +321,112 @@ function RegisterModal({ onClose, onRegister }) {
           disabled={busy}
         >
           {busy ? 'Please wait…' : 'Create account'}
+        </button>
+      </form>
+    </Modal>
+  );
+}
+function LoginModal({ onClose, onSignIn }) {
+  const [message, setMessage] = useState(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const superadminEmail = 'johnjefferson.leonardo@gmail.com';
+
+  async function submit(event) {
+    event.preventDefault();
+    setMessage(null);
+    setBusy(true);
+
+    try {
+      const result = await onSignIn({ email, password });
+
+      if (result.error) {
+        setMessage({ type: 'error', text: result.error });
+      } else {
+        onClose();
+      }
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error.message || 'Sign-in could not be completed.',
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal
+      title="Welcome Back"
+      subtitle="Sign in to your account"
+      onClose={onClose}
+    >
+      <form className="modal-body" onSubmit={submit}>
+        <Alert message={message} />
+
+        <div className="role-note">
+          <strong>Initial Superadmin account</strong>
+          <p>Account: Hope, Inc. Superadmin</p>
+          <p>Email: {superadminEmail}</p>
+          <p>
+            Password: The password you chose when registering this email.
+            It is not stored or displayed by the website.
+          </p>
+
+          <button
+            className="button button-outline button-full"
+            type="button"
+            onClick={() => setEmail(superadminEmail)}
+          >
+            Use this email
+          </button>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="loginEmail">Email Address</label>
+          <input
+            id="loginEmail"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="loginPassword">Password</label>
+          <input
+            id="loginPassword"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+          />
+        </div>
+
+        <button
+          className="button button-primary button-full"
+          type="submit"
+          disabled={busy}
+        >
+          {busy ? 'Please wait...' : 'Sign In'}
+        </button>
+
+        <button
+          className="button button-ghost button-full"
+          type="button"
+          onClick={() =>
+            setMessage({
+              type: 'error',
+              text: 'Password recovery is not available yet.',
+            })
+          }
+        >
+          Forgot Password?
         </button>
       </form>
     </Modal>
@@ -1080,6 +1210,14 @@ export default function App() {
   const customers = data.customers;
   const [loading, setLoading] = useState(Boolean(supabaseConfigured));
 
+  async function signOut() {
+  if (!supabase) return;
+
+  const { error } = await supabase.auth.signOut();
+
+  if (error) setAppError(`Could not sign out: ${error.message}`);
+}
+
   useEffect(() => {
     let active = true;
     if (!supabaseConfigured || !supabase) {
@@ -1257,15 +1395,40 @@ export default function App() {
   }
 
   async function changeUserStatus(email, status) {
-    const target = users.find((entry) => entry.email.toLowerCase() === email.toLowerCase());
-    if (!target || !isAdmin(currentUser) || (currentUser.role !== 'superadmin' && target.role !== 'user')) {
-      return setAppError('You are not allowed to change this account status.');
-    }
-    if (email.toLowerCase() === currentUser.email.toLowerCase()) return setAppError('You cannot change your own account status.');
-    const { error } = await supabase.from('app_profiles').update({ status }).eq('id', target.id);
-    if (error) return setAppError(`Could not update account status: ${error.message}`);
-    try { await reloadWorkspace(); } catch (error) { setAppError(error.message); }
+  const target = users.find(
+    (entry) => entry.email.toLowerCase() === email.toLowerCase()
+  );
+
+  if (
+    !target ||
+    !isAdmin(currentUser) ||
+    (currentUser.role !== 'superadmin' && target.role !== 'user')
+  ) {
+    return setAppError('You are not allowed to change this account status.');
   }
+
+  if (email.toLowerCase() === currentUser.email.toLowerCase()) {
+    return setAppError('You cannot change your own account status.');
+  }
+
+  const { error } = await supabase.functions.invoke('manage-user', {
+    body: {
+      action: 'status',
+      userId: target.id,
+      status,
+    },
+  });
+
+  if (error) {
+    return setAppError(`Could not update account status: ${error.message}`);
+  }
+
+  try {
+    await reloadWorkspace();
+  } catch (error) {
+    setAppError(error.message);
+  }
+}
 
   async function changeUserPermissions(email, perms) {
     const target = users.find((entry) => entry.email.toLowerCase() === email.toLowerCase());
@@ -1278,44 +1441,62 @@ export default function App() {
   }
 
   return (
-    <>
-      {currentUser?.status === 'active' && data ? (
-        <Dashboard
-          user={currentUser}
-          users={users}
-          customers={customers}
-          data={data}
-          dataError={dataError}
-          dataLoading={dataLoading}
-          onReloadData={reloadWorkspace}
-          appError={appError}
-          clearError={() => setAppError('')}
-          onLogout={signOut}
-          onCustomerSave={saveCustomer}
-          onCustomerState={(custNo, isDeleted) => changeRecordState('customers', custNo, isDeleted)}
-          onRecordSave={saveModuleRecord}
-          onRecordState={changeRecordState}
-          onUserSave={saveUser}
-          onUserDelete={deleteUser}
-          onUserStatus={changeUserStatus}
-          onUserPermissions={changeUserPermissions}
-        />
-      ) : (
-        <>
-          <LandingPage openAuth={setAuthMode} />
-          {authMode === 'register' && supabaseConfigured && (
-  <RegisterModal
-    onClose={() => setAuthMode(null)}
-    onRegister={register}
-  />
-)}
-          {loading && <div className="storage-warning" role="status">Connecting to your Hope database…</div>}
-          {(appError || dataError) && <div className="connection-error" role="alert">
+  <>
+    {currentUser?.status === 'active' && data ? (
+      <Dashboard
+        user={currentUser}
+        users={users}
+        customers={customers}
+        data={data}
+        dataError={dataError}
+        dataLoading={dataLoading}
+        onReloadData={reloadWorkspace}
+        appError={appError}
+        clearError={() => setAppError('')}
+        onLogout={signOut}
+        onCustomerSave={saveCustomer}
+        onCustomerState={(custNo, isDeleted) => changeRecordState('customers', custNo, isDeleted)}
+        onRecordSave={saveModuleRecord}
+        onRecordState={changeRecordState}
+        onUserSave={saveUser}
+        onUserDelete={deleteUser}
+        onUserStatus={changeUserStatus}
+        onUserPermissions={changeUserPermissions}
+      />
+    ) : loading || (authUser && !currentUser && !dataError) ? (
+      <div className="storage-warning" role="status">
+        Connecting to your Hope database...
+      </div>
+    ) : (
+      <>
+        <LandingPage openAuth={setAuthMode} />
+
+        {authMode === 'register' && supabaseConfigured && (
+          <RegisterModal
+            onClose={() => setAuthMode(null)}
+            onRegister={register}
+          />
+        )}
+
+        {authMode === 'login' && supabaseConfigured && (
+          <LoginModal
+            onClose={() => setAuthMode(null)}
+            onSignIn={signIn}
+          />
+        )}
+
+        {(appError || dataError) && (
+          <div className="connection-error" role="alert">
             <Alert message={{ type: 'error', text: appError || dataError }} />
-            {authUser && <button className="button button-outline" onClick={signOut}>Sign out</button>}
-          </div>}
-        </>
-      )}
-</>
-  );
+            {authUser && (
+              <button className="button button-outline" onClick={signOut}>
+                Sign out
+              </button>
+            )}
+          </div>
+        )}
+      </>
+    )}
+  </>
+);
 }
