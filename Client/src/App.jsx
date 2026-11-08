@@ -145,6 +145,43 @@ async function signIn({ email, password }) {
 
 return { user: data.user };
 }
+async function requestPasswordReset(email) {
+  if (!supabase) {
+    return { error: 'Supabase is not configured.' };
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(
+    email.trim(),
+    {
+      redirectTo: `${window.location.origin}/main.html`,
+    }
+  );
+
+  if (error) {
+  const message = error.message.toLowerCase();
+
+  if (message.includes('rate limit')) {
+    return {
+      error: 'Too many email requests. Please wait a while before trying again.',
+    };
+  }
+
+  return { error: error.message };
+}
+
+return {};
+}
+async function updatePassword(password) {
+  if (!supabase) {
+    return { error: 'Supabase is not configured.' };
+  }
+
+  const { error } = await supabase.auth.updateUser({
+    password,
+  });
+
+  return error ? { error: error.message } : {};
+}
 const MODULES = [
   { id: 'dashboard', label: 'Overview', initials: 'OV' },
   { id: 'customers', label: 'Customers', initials: 'CU', permission: 'customers.view' },
@@ -326,7 +363,7 @@ function RegisterModal({ onClose, onRegister }) {
     </Modal>
   );
 }
-function LoginModal({ onClose, onSignIn }) {
+function LoginModal({ onClose, onSignIn, onRequestReset }) {
   const [message, setMessage] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -356,7 +393,38 @@ function LoginModal({ onClose, onSignIn }) {
       setBusy(false);
     }
   }
+async function handleForgotPassword() {
+  if (!email.trim()) {
+    setMessage({
+      type: 'error',
+      text: 'Please enter your email address first.',
+    });
+    return;
+  }
 
+  setBusy(true);
+  setMessage(null);
+
+  try {
+    const result = await onRequestReset(email);
+
+    if (result.error) {
+      setMessage({ type: 'error', text: result.error });
+    } else {
+      setMessage({
+        type: 'success',
+        text: 'If an account exists with that email, a password-reset link will be sent.',
+      });
+    }
+  } catch (error) {
+    setMessage({
+      type: 'error',
+      text: error.message || 'Could not send the reset email.',
+    });
+  } finally {
+    setBusy(false);
+  }
+}
   return (
     <Modal
       title="Welcome Back"
@@ -419,14 +487,105 @@ function LoginModal({ onClose, onSignIn }) {
         <button
           className="button button-ghost button-full"
           type="button"
-          onClick={() =>
-            setMessage({
-              type: 'error',
-              text: 'Password recovery is not available yet.',
-            })
-          }
+          onClick={handleForgotPassword}
+          disabled={busy}
         >
           Forgot Password?
+        </button>
+      </form>
+    </Modal>
+  );
+}
+function ResetPasswordModal({ onUpdatePassword, onClose }) {
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [message, setMessage] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit(event) {
+    event.preventDefault();
+    setMessage(null);
+
+    if (password.length < 8) {
+      setMessage({
+        type: 'error',
+        text: 'Password must be at least 8 characters.',
+      });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setMessage({
+        type: 'error',
+        text: 'Passwords do not match.',
+      });
+      return;
+    }
+
+    setBusy(true);
+
+    try {
+      const result = await onUpdatePassword(password);
+
+      if (result.error) {
+        setMessage({ type: 'error', text: result.error });
+      } else {
+        setMessage({
+          type: 'success',
+          text: 'Your password has been updated successfully.',
+        });
+      }
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error.message || 'Could not update your password.',
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal
+      title="Reset Password"
+      subtitle="Enter your new password below."
+      onClose={onClose}
+    >
+      <form className="modal-body" onSubmit={submit}>
+        <Alert message={message} />
+
+        <div className="form-group">
+          <label htmlFor="newPassword">New Password</label>
+          <input
+            id="newPassword"
+            type="password"
+            autoComplete="new-password"
+            minLength="8"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="confirmNewPassword">Confirm New Password</label>
+          <input
+            id="confirmNewPassword"
+            type="password"
+            autoComplete="new-password"
+            minLength="8"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            required
+          />
+        </div>
+
+        <button
+          className="button button-primary button-full"
+          type="submit"
+          disabled={busy}
+        >
+          {busy ? 'Please wait...' : 'Update Password'}
         </button>
       </form>
     </Modal>
@@ -1236,16 +1395,21 @@ export default function App() {
       setAppError(`Could not connect to Supabase Auth: ${error.message}`);
       setLoading(false);
     });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!active) return;
-      setAuthUser(session?.user || null);
-      setAppError('');
-    });
-    return () => {
-      active = false;
-      listener.subscription.unsubscribe();
-    };
-  }, []);
+   const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+  if (!active) return;
+
+  setAuthUser(session?.user || null);
+  setAppError('');
+
+  if (event === 'PASSWORD_RECOVERY') {
+    setAuthMode('reset-password');
+  }
+});
+return () => {
+     active = false;
+     listener.subscription.unsubscribe();
+   };
+ }, []);
 
   async function reloadWorkspace() {
     if (!authUser || !supabase) return;
@@ -1442,7 +1606,15 @@ export default function App() {
 
   return (
   <>
-    {currentUser?.status === 'active' && data ? (
+    {authMode === 'reset-password' ? (
+  <ResetPasswordModal
+    onUpdatePassword={updatePassword}
+    onClose={() => {
+      setAuthMode(null);
+      signOut();
+    }}
+  />
+) : currentUser?.status === 'active' && data ? (
       <Dashboard
         user={currentUser}
         users={users}
@@ -1482,6 +1654,7 @@ export default function App() {
           <LoginModal
             onClose={() => setAuthMode(null)}
             onSignIn={signIn}
+             onRequestReset={requestPasswordReset}
           />
         )}
 
