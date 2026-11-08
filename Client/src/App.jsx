@@ -220,122 +220,6 @@ function CustomerModal({ customer, error, onClose, onSave }) {
   );
 }
 
-function AuthModal({ mode, onClose, onModeChange, onLogin, onRegister, onReset }) {
-  const [message, setMessage] = useState(null);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [busy, setBusy] = useState(false);
-
-  const content = {
-    login: { title: 'Welcome back', subtitle: 'Sign in to your account' },
-    register: { title: 'Create account', subtitle: 'Create your Hope, Inc. ERP account' },
-    reset: { title: 'Reset password', subtitle: 'We will send a reset link if the account exists.' },
-  }[mode];
-
-  async function submit(event) {
-    event.preventDefault();
-    setMessage(null);
-    setBusy(true);
-    try {
-      if (mode === 'login') {
-        const result = await onLogin(email.trim(), password);
-        if (result.error) setMessage({ type: 'error', text: result.error });
-        else onClose();
-        return;
-      }
-
-      if (mode === 'register') {
-        const result = await onRegister({ email: email.trim(), password, firstName: firstName.trim(), lastName: lastName.trim() });
-        if (result.error) setMessage({ type: 'error', text: result.error });
-        else {
-          setMessage({ type: 'success', text: 'Check your email to confirm your account. An administrator must approve your access before you can use the workspace.' });
-          setEmail('');
-          setPassword('');
-          setFirstName('');
-          setLastName('');
-        }
-        return;
-      }
-
-      const result = await onReset(email.trim());
-      if (result?.error) setMessage({ type: 'error', text: result.error });
-      else setMessage({ type: 'success', text: `If an account exists for ${email.trim()}, a password reset email has been sent.` });
-      setEmail('');
-    } catch (error) {
-      setMessage({ type: 'error', text: error.message || 'The request could not be completed.' });
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Modal title={content.title} subtitle={content.subtitle} onClose={onClose}>
-      <form className="modal-body" onSubmit={submit}>
-        <Alert message={message} />
-        {mode === 'login' && <div className="demo-hint">
-          <strong>Initial Superadmin account</strong>
-          <span><b>Account:</b> Hope, Inc. Superadmin</span>
-          <span><b>Email:</b> johnjefferson.leonardo@gmail.com</span>
-          <span><b>Password:</b> The password you chose when registering this email. It is not stored or displayed by the website.</span>
-          <button className="text-button" type="button" onClick={() => setEmail('johnjefferson.leonardo@gmail.com')}>Use this email</button>
-          <span>It receives the Superadmin role only if it is the first Superadmin registration after the database migration.</span>
-        </div>}
-        {mode === 'register' && (
-          <>
-          <div className="role-note">New accounts are created as <strong>User</strong> and remain pending until approved. Only admins and superadmins can change ERP data; only a Superadmin can assign elevated roles.</div>
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="regFirstName">First name</label>
-              <input id="regFirstName" value={firstName} onChange={(event) => setFirstName(event.target.value)} autoFocus required />
-            </div>
-            <div className="form-group">
-              <label htmlFor="regLastName">Last name</label>
-              <input id="regLastName" value={lastName} onChange={(event) => setLastName(event.target.value)} required />
-            </div>
-          </div>
-          </>
-        )}
-        <div className="form-group">
-          <label htmlFor={`${mode}-email`}>Email address</label>
-          <input
-            id={`${mode}-email`}
-            type="email"
-            autoFocus={mode !== 'register'}
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-        </div>
-        {(mode === 'login' || mode === 'register') && (
-          <div className="form-group">
-            <label htmlFor={`${mode}-password`}>Password</label>
-            <input id={`${mode}-password`} type="password" minLength="8" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} value={password} onChange={(event) => setPassword(event.target.value)} required />
-          </div>
-        )}
-        <button className="button button-primary button-full" type="submit" disabled={busy}>
-          {busy ? 'Please wait…' : mode === 'login' ? 'Sign in' : mode === 'register' ? 'Create account' : 'Send reset link'}
-        </button>
-        <div className="form-footer">
-          {mode === 'login' && (
-            <>
-              <button className="text-button" type="button" onClick={() => onModeChange('reset')}>Forgot password?</button>
-              <p>New to Hope ERP? <button className="text-button" type="button" onClick={() => onModeChange('register')}>Create an account</button></p>
-            </>
-          )}
-          {mode === 'register' && (
-            <p>Already have an account? <button className="text-button" type="button" onClick={() => onModeChange('login')}>Sign in</button></p>
-          )}
-          {mode === 'reset' && (
-            <p>Remembered it? <button className="text-button" type="button" onClick={() => onModeChange('login')}>Back to sign in</button></p>
-          )}
-        </div>
-      </form>
-    </Modal>
-  );
-}
-
 function LandingPage({ openAuth }) {
   const features = [
     { initials: 'CU', title: 'Customer management', description: 'Track customer relationships, addresses, and payment terms in one place.' },
@@ -1135,34 +1019,6 @@ export default function App() {
     reloadWorkspace();
   }, [authUser]);
 
-  async function signIn(email, password) {
-    if (!supabase) return { error: 'Supabase is not configured.' };
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return error ? { error: error.message } : {};
-  }
-
-  async function register({ email, password, firstName, lastName }) {
-    if (!supabase) return { error: 'Supabase is not configured.' };
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { first_name: firstName, last_name: lastName }, emailRedirectTo: window.location.origin },
-    });
-    return error ? { error: error.message } : {};
-  }
-
-  async function resetPassword(email) {
-    if (!supabase) return { error: 'Supabase is not configured.' };
-    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
-    return error ? { error: error.message } : {};
-  }
-
-  async function signOut() {
-    if (!supabase) return;
-    const { error } = await supabase.auth.signOut();
-    if (error) setAppError(`Could not sign out: ${error.message}`);
-  }
-
   async function saveRecord(collection, record, keyFields, editKey = null) {
     if (!isAdmin(currentUser)) return { error: 'Only admins and superadmins can change ERP data.' };
     const cleaned = Object.fromEntries(Object.entries(record).filter(([key]) => !['isDeleted', 'stamp'].includes(key)));
@@ -1322,7 +1178,6 @@ export default function App() {
           </div>}
         </>
       )}
-      {authMode && supabaseConfigured && <AuthModal key={authMode} mode={authMode} onClose={() => setAuthMode(null)} onModeChange={setAuthMode} onLogin={signIn} onRegister={register} onReset={resetPassword} />}
-    </>
+</>
   );
 }
