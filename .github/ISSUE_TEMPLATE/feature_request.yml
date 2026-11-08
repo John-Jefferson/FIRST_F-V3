@@ -1,0 +1,57 @@
+name: Feature request
+description: Suggest an improvement to Hope, Inc. ERP.
+title: "[Feature]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the user need and intended outcome. Avoid including credentials
+        or real customer, employee, or other sensitive data.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the application would this improve?
+      options:
+        - Sign in or account management
+        - Overview
+        - Customers
+        - Products or price history
+        - Human resources
+        - Sales
+        - Payments
+        - Reports
+        - Database or permissions
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or need
+      description: What user need or problem would this address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Describe the behavior you would like to see.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List observable conditions that would show the request is complete.
+      placeholder: |
+        - [ ] Given ...
+        - [ ] When ...
+        - [ ] Then ...
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives or additional context
+      description: Note alternatives considered or relevant context, if any.
