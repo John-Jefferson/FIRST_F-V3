@@ -1450,7 +1450,17 @@ function Dashboard({ user, users, customers, data, dataError, dataLoading, onRel
       <header className="dashboard-header">
         <Brand compact />
         <nav className="dashboard-nav" aria-label="Main navigation">
-          {visibleModules.map((module) => <button className={currentPage.id === module.id ? 'nav-item active' : 'nav-item'} key={module.id} onClick={() => setActivePage(module.id)}><span className="nav-initials">{module.initials}</span>{module.label}</button>)}
+          {visibleModules.map((module) => (
+  <button
+    className={currentPage.id === module.id ? 'nav-item active' : 'nav-item'}
+    key={module.id}
+    onClick={() => setActivePage(module.id)}
+    aria-current={currentPage.id === module.id ? 'page' : undefined}
+  >
+    <span className="nav-initials">{module.initials}</span>
+    {module.label}
+  </button>
+))}
         </nav>
         <div className="account-area"><div className="account-user"><span className="account-avatar">{name.charAt(0).toUpperCase()}</span><span className="account-copy"><strong>{name}</strong><small>{user.role}</small></span><span className={`role-badge role-${user.role}`}>{user.role}</span></div>
           <button className="button button-ghost logout-button" onClick={onLogout}>Sign out</button></div>
