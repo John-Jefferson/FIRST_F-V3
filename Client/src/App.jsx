@@ -1515,40 +1515,71 @@ return () => {
   }
 
   async function saveUser(form, editEmail) {
-    if (!isAdmin(currentUser)) return { error: 'Only administrators can manage accounts.' };
-    if (!editEmail) {
-      const email = form.email.trim().toLowerCase();
-      if (!email || !form.firstName.trim() || !form.lastName.trim() || form.password.length < 8) {
-        return { error: 'Enter the account name, a valid email, and a password of at least 8 characters.' };
-      }
-      const { error } = await supabase.functions.invoke('manage-user', {
-        body: {
-          action: 'create',
-          email,
-          password: form.password,
-          firstName: form.firstName.trim(),
-          lastName: form.lastName.trim(),
-          role: form.role,
-        },
-      });
-      if (error) return { error: error.message };
-      try { await reloadWorkspace(); } catch (error) { return { error: error.message }; }
-      return {};
+  if (!isAdmin(currentUser)) {
+    return { error: 'Only administrators can manage accounts.' };
+  }
+
+  if (!editEmail) {
+    const email = form.email.trim().toLowerCase();
+
+    if (!email || !form.firstName.trim() || !form.lastName.trim() || form.password.length < 8) {
+      return { error: 'Enter the account name, a valid email, and a password of at least 8 characters.' };
     }
-    const target = users.find((entry) => entry.email.toLowerCase() === editEmail.toLowerCase());
-    if (!target) return { error: 'This account no longer exists. Refresh and try again.' };
-    if (currentUser.role !== 'superadmin' && target.role !== 'user') return { error: 'Admins can only manage User accounts.' };
-    const update = {
-      first_name: form.firstName.trim(),
-      last_name: form.lastName.trim(),
-      ...(currentUser.role === 'superadmin' ? { role: form.role } : {}),
-    };
-    const { error } = await supabase.from('app_profiles').update(update).eq('id', target.id);
+
+    const { error } = await supabase.functions.invoke('manage-user', {
+      body: {
+        action: 'create',
+        email,
+        password: form.password,
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        role: form.role,
+      },
+    });
+
     if (error) return { error: error.message };
-    try { await reloadWorkspace(); } catch (error) { return { error: error.message }; }
+
+    try {
+      await reloadWorkspace();
+    } catch (error) {
+      return { error: error.message };
+    }
+
     return {};
   }
 
+  const target = users.find(
+    (entry) => entry.email.toLowerCase() === editEmail.toLowerCase()
+  );
+
+  if (!target) {
+    return { error: 'This account no longer exists. Refresh and try again.' };
+  }
+
+  if (currentUser.role !== 'superadmin' && target.role !== 'user') {
+    return { error: 'Admins can only manage User accounts.' };
+  }
+
+  const { error } = await supabase.functions.invoke('manage-user', {
+    body: {
+      action: 'update',
+      userId: target.id,
+      firstName: form.firstName.trim(),
+      lastName: form.lastName.trim(),
+      role: form.role,
+    },
+  });
+
+  if (error) return { error: error.message };
+
+  try {
+    await reloadWorkspace();
+  } catch (error) {
+    return { error: error.message };
+  }
+
+  return {};
+}
   async function deleteUser(email) {
     const target = users.find((entry) => entry.email.toLowerCase() === email.toLowerCase());
     if (!target) return { error: 'This account no longer exists.' };
@@ -1584,8 +1615,15 @@ return () => {
   });
 
   if (error) {
-    return setAppError(`Could not update account status: ${error.message}`);
-  }
+  let message = error.message;
+
+  try {
+    const response = await error.context.json();
+    message = response.error || message;
+  } catch {}
+
+  return setAppError(`Could not update account status: ${message}`);
+}
 
   try {
     await reloadWorkspace();
