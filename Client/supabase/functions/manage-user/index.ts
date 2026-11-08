@@ -80,6 +80,58 @@ Deno.serve(async (request: Request) => {
     }
     return jsonResponse(201, { id: created.user.id, email });
   }
+  if (payload.action === 'update') {
+    const userId = typeof payload.userId === 'string' ? payload.userId : '';
+    const firstName = typeof payload.firstName === 'string' ? payload.firstName.trim() : '';
+    const lastName = typeof payload.lastName === 'string' ? payload.lastName.trim() : '';
+    const role = typeof payload.role === 'string' ? payload.role : '';
+
+    if (!userId || !firstName || !lastName) {
+      return jsonResponse(400, { error: 'Provide a valid account, first name, and last name.' });
+    }
+
+    if (userId === authData.user.id) {
+      return jsonResponse(400, { error: 'You cannot edit your own account through this action.' });
+    }
+
+    const { data: target, error: targetError } = await adminClient
+      .from('app_profiles')
+      .select('id, role')
+      .eq('id', userId)
+      .single();
+
+    if (targetError || !target) {
+      return jsonResponse(404, { error: 'The account was not found.' });
+    }
+
+    if (actor.role !== 'superadmin' && target.role !== 'user') {
+      return jsonResponse(403, { error: 'Admins can only manage User accounts.' });
+    }
+
+    const update: Record<string, unknown> = {
+      first_name: firstName,
+      last_name: lastName,
+    };
+
+    if (actor.role === 'superadmin') {
+      if (!['user', 'admin', 'superadmin'].includes(role)) {
+        return jsonResponse(400, { error: 'Invalid account role.' });
+      }
+
+      update.role = role;
+    }
+
+    const { error: updateError } = await adminClient
+      .from('app_profiles')
+      .update(update)
+      .eq('id', userId);
+
+    if (updateError) {
+      return jsonResponse(400, { error: updateError.message });
+    }
+
+    return jsonResponse(200, { id: userId, updated: true });
+  }
 
   if (payload.action === 'delete') {
     const userId = typeof payload.userId === 'string' ? payload.userId : '';
@@ -97,8 +149,7 @@ Deno.serve(async (request: Request) => {
     if (deleteError) return jsonResponse(500, { error: `Could not remove the account: ${deleteError.message}` });
     return jsonResponse(200, { deleted: userId });
   }
-
- if (payload.action === 'status') {
+  if (payload.action === 'status') {
     const userId = typeof payload.userId === 'string' ? payload.userId : '';
     const status = typeof payload.status === 'string' ? payload.status : '';
 
@@ -124,7 +175,6 @@ Deno.serve(async (request: Request) => {
       return jsonResponse(403, { error: 'Admins can only manage User accounts.' });
     }
 
-    // Block or unblock the account at the Supabase Auth level.
     const { error: authUpdateError } = await adminClient.auth.admin.updateUserById(
       userId,
       { ban_duration: status === 'blocked' ? '876000h' : 'none' }
@@ -140,7 +190,6 @@ Deno.serve(async (request: Request) => {
       .eq('id', userId);
 
     if (profileError) {
-      // Restore the previous authentication ban if the profile update fails.
       await adminClient.auth.admin.updateUserById(userId, {
         ban_duration: target.status === 'blocked' ? '876000h' : 'none',
       });
