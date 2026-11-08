@@ -98,5 +98,57 @@ Deno.serve(async (request: Request) => {
     return jsonResponse(200, { deleted: userId });
   }
 
+ if (payload.action === 'status') {
+    const userId = typeof payload.userId === 'string' ? payload.userId : '';
+    const status = typeof payload.status === 'string' ? payload.status : '';
+
+    if (!userId || userId === authData.user.id) {
+      return jsonResponse(400, { error: 'A different account must be selected.' });
+    }
+
+    if (!['active', 'pending', 'blocked', 'disapproved'].includes(status)) {
+      return jsonResponse(400, { error: 'Invalid account status.' });
+    }
+
+    const { data: target, error: targetError } = await adminClient
+      .from('app_profiles')
+      .select('id, role, status')
+      .eq('id', userId)
+      .single();
+
+    if (targetError || !target) {
+      return jsonResponse(404, { error: 'The account was not found.' });
+    }
+
+    if (actor.role !== 'superadmin' && target.role !== 'user') {
+      return jsonResponse(403, { error: 'Admins can only manage User accounts.' });
+    }
+
+    // Block or unblock the account at the Supabase Auth level.
+    const { error: authUpdateError } = await adminClient.auth.admin.updateUserById(
+      userId,
+      { ban_duration: status === 'blocked' ? '876000h' : 'none' }
+    );
+
+    if (authUpdateError) {
+      return jsonResponse(500, { error: `Could not update authentication status: ${authUpdateError.message}` });
+    }
+
+    const { error: profileError } = await adminClient
+      .from('app_profiles')
+      .update({ status })
+      .eq('id', userId);
+
+    if (profileError) {
+      // Restore the previous authentication ban if the profile update fails.
+      await adminClient.auth.admin.updateUserById(userId, {
+        ban_duration: target.status === 'blocked' ? '876000h' : 'none',
+      });
+
+      return jsonResponse(500, { error: `Could not update profile status: ${profileError.message}` });
+    }
+
+    return jsonResponse(200, { id: userId, status });
+  }
   return jsonResponse(400, { error: 'Unsupported account-management action.' });
 });
