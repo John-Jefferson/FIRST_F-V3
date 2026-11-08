@@ -102,7 +102,25 @@ async function loadWorkspace(userId) {
   }
   return { user, users, data: Object.fromEntries(entries) };
 }
+async function register({ email, password, firstName, lastName }) {
+  if (!supabase) {
+    return { error: 'Supabase is not configured.' };
+  }
 
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        first_name: firstName,
+        last_name: lastName,
+      },
+      emailRedirectTo: window.location.origin,
+    },
+  });
+
+  return error ? { error: error.message } : {};
+}
 const MODULES = [
   { id: 'dashboard', label: 'Overview', initials: 'OV' },
   { id: 'customers', label: 'Customers', initials: 'CU', permission: 'customers.view' },
@@ -169,7 +187,121 @@ function Modal({ title, subtitle, onClose, children, wide = false }) {
     </div>
   );
 }
+function RegisterModal({ onClose, onRegister }) {
+  const [message, setMessage] = useState(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [busy, setBusy] = useState(false);
 
+  async function submit(event) {
+    event.preventDefault();
+    setMessage(null);
+    setBusy(true);
+
+    try {
+      const result = await onRegister({
+        email: email.trim(),
+        password,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+      });
+
+      if (result.error) {
+        setMessage({ type: 'error', text: result.error });
+      } else {
+        setMessage({
+          type: 'success',
+          text: 'Check your email to confirm your account. An administrator must approve your access before you can use the workspace.',
+        });
+
+        setEmail('');
+        setPassword('');
+        setFirstName('');
+        setLastName('');
+      }
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error.message || 'The request could not be completed.',
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal
+      title="Create account"
+      subtitle="Create your Hope, Inc. ERP account"
+      onClose={onClose}
+    >
+      <form className="modal-body" onSubmit={submit}>
+        <Alert message={message} />
+
+        <div className="role-note">
+          New accounts are created as <strong>User</strong> and remain pending
+          until approved.
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label htmlFor="regFirstName">First name</label>
+            <input
+              id="regFirstName"
+              value={firstName}
+              onChange={(event) => setFirstName(event.target.value)}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="regLastName">Last name</label>
+            <input
+              id="regLastName"
+              value={lastName}
+              onChange={(event) => setLastName(event.target.value)}
+              required
+            />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="regEmail">Email address</label>
+          <input
+            id="regEmail"
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="regPassword">Password</label>
+          <input
+            id="regPassword"
+            type="password"
+            minLength="8"
+            autoComplete="new-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+          />
+        </div>
+
+        <button
+          className="button button-primary button-full"
+          type="submit"
+          disabled={busy}
+        >
+          {busy ? 'Please wait…' : 'Create account'}
+        </button>
+      </form>
+    </Modal>
+  );
+}
 function CustomerModal({ customer, error, onClose, onSave }) {
   const [form, setForm] = useState({
     custNo: customer?.custNo || '',
@@ -1171,6 +1303,12 @@ export default function App() {
       ) : (
         <>
           <LandingPage openAuth={setAuthMode} />
+          {authMode === 'register' && supabaseConfigured && (
+  <RegisterModal
+    onClose={() => setAuthMode(null)}
+    onRegister={register}
+  />
+)}
           {loading && <div className="storage-warning" role="status">Connecting to your Hope database…</div>}
           {(appError || dataError) && <div className="connection-error" role="alert">
             <Alert message={{ type: 'error', text: appError || dataError }} />
