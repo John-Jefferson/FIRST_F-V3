@@ -191,6 +191,7 @@ const MODULES = [
   { id: 'payments', label: 'Payments', initials: 'PM', permission: 'payments.view' },
   { id: 'reports', label: 'Reports', initials: 'RE', permission: 'reports.view' },
   { id: 'users', label: 'Users', initials: 'US', adminOnly: true },
+  { id: 'audit', label: 'Audit Log', initials: 'AL', adminOnly: true },
 ];
 
 function isAdmin(user) {
@@ -1230,6 +1231,122 @@ function ReportsPage({ user, users, data, customers }) {
   );
 }
 
+function AuditLogPage() {
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    async function loadAuditLogs() {
+      setLoading(true);
+      setError('');
+
+      const { data: rows, error: fetchError } = await supabase
+        .from('audit_logs')
+        .select('id, table_name, action, record_id, performed_by, old_data, new_data, created_at')
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+      if (fetchError) {
+        setError(fetchError.message);
+        setLoading(false);
+        return;
+      }
+
+      const ids = [...new Set((rows || [])
+        .map((row) => row.performed_by)
+        .filter(Boolean))];
+
+      let profiles = [];
+
+      if (ids.length) {
+        const { data: profileRows } = await supabase
+          .from('app_profiles')
+          .select('id, first_name, last_name, email')
+          .in('id', ids);
+
+        profiles = profileRows || [];
+      }
+
+      const profileMap = new Map(profiles.map((profile) => [
+        profile.id,
+        `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email
+      ]));
+
+      setLogs((rows || []).map((row) => ({
+        ...row,
+        performer: profileMap.get(row.performed_by) || row.performed_by || 'System'
+      })));
+
+      setLoading(false);
+    }
+
+    loadAuditLogs();
+  }, []);
+
+  return (
+    <section className="content-panel">
+      <div className="module-toolbar">
+        <div>
+          <span className="section-kicker">SECURITY</span>
+          <h2>Audit log</h2>
+          <p>Review recent account activity and changes recorded by the system.</p>
+        </div>
+          <button className="button button-outline" onClick={() => window.location.reload()}>
+            Refresh
+          </button>
+      </div>
+
+      {error && <Alert message={{ type: 'error', text: error }} />}
+
+      {loading ? (
+        <p>Loading audit logs...</p>
+      ) : (
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Performed by</th>
+                <th>Action</th>
+                <th>Table</th>
+                <th>Record ID</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              {logs.map((log) => (
+                <tr key={log.id}>
+                  <td>{new Date(log.created_at).toLocaleString()}</td>
+                  <td>{log.performer}</td>
+                  <td>{log.action}</td>
+                  <td>{log.table_name}</td>
+                  <td>{log.record_id || '—'}</td>
+                  <td>
+                    <details>
+                      <summary>View changes</summary>
+                      <pre>{JSON.stringify({
+                        before: log.old_data,
+                        after: log.new_data
+                      }, null, 2)}</pre>
+                    </details>
+                  </td>
+                </tr>
+              ))}
+              {!logs.length && (
+                <tr>
+                  <td className="empty-state" colSpan="6">
+                    No audit records found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
 function UserManagement({ user, users, onSave, onDelete, onStatus, onPermissions }) {
   const isSuper = user.role === 'superadmin';
   const [editing, setEditing] = useState(null);
@@ -1351,6 +1468,7 @@ function Dashboard({ user, users, customers, data, dataError, dataLoading, onRel
         {['products', 'hr', 'sales', 'payments'].includes(currentPage.id) && <RecordsPage key={currentPage.id} section={currentPage.id} user={user} users={users} data={data} customers={customers} onSave={onRecordSave} onChangeState={onRecordState} />}
         {currentPage.id === 'reports' && <ReportsPage user={user} users={users} data={data} customers={customers} />}
         {currentPage.id === 'users' && <UserManagement user={user} users={users} onSave={onUserSave} onDelete={onUserDelete} onStatus={onUserStatus} onPermissions={onUserPermissions} />}
+        {currentPage.id === 'audit' && <AuditLogPage />}
         <footer className="dashboard-footer"><Brand compact /><span>© 2026 Hope, Inc. ERP · All rights reserved.</span></footer>
       </main>
     </div>
