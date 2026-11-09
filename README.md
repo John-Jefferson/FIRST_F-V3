@@ -1,5 +1,12 @@
 # Hope, Inc. ERP Client
 
+## Members:
+### Leonardo, John Jefferson B.
+### Naga, Alimodin P.
+### Daguimol, MIchael Vincent V.
+### Itliong, Luiz Joaquin A.
+### Almozara, Aldrin E.
+
 The client uses Supabase Auth for login, protected `app_profiles` for user roles, and Supabase for ERP business data. Database row-level security (RLS) enforces module access:
 
 | Role | Modules |
