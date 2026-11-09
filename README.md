@@ -7,6 +7,10 @@
 ### Itliong, Luiz Joaquin A.
 ### Almozara, Aldrin E.
 
+## About the System & Usage
+
+The **Hope, Inc. ERP Client** is a web-based Enterprise Resource Planning (ERP) platform designed to streamline daily business management into a single centralized system. It provides structured tools for tracking inventory, handling HR records, processing payment transactions, and managing user authorization levels safely across an organization
+
 The client uses Supabase Auth for login, protected `app_profiles` for user roles, and Supabase for ERP business data. Database row-level security (RLS) enforces module access:
 
 | Role | Modules |
