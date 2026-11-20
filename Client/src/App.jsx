@@ -606,7 +606,16 @@ function CustomerModal({ customer, error, onClose, onSave }) {
 
   async function submit(event) {
     event.preventDefault();
-    await onSave(form);
+
+    const cleaned = Object.fromEntries(
+      Object.entries(form).map(([key, value]) => [key, value.trim()])
+    );
+
+    if (Object.values(cleaned).some((value) => !value)) {
+      return;
+    }
+
+    await onSave(cleaned);
   }
 
   return (
@@ -619,11 +628,11 @@ function CustomerModal({ customer, error, onClose, onSave }) {
         <Alert message={error ? { type: 'error', text: error } : null} />
         <div className="form-group">
           <label htmlFor="custNo">Customer number</label>
-          <input id="custNo" name="custNo" value={form.custNo} onChange={update} readOnly={Boolean(customer)} required />
+          <input id="custNo" name="custNo" value={form.custNo} onChange={update} readOnly={Boolean(customer)} required maxLength={5} />
         </div>
         <div className="form-group">
           <label htmlFor="custName">Company name</label>
-          <input id="custName" name="custName" value={form.custName} onChange={update} autoFocus required />
+          <input id="custName" name="custName" value={form.custName} onChange={update} autoFocus required maxLength={20} />
         </div>
         <div className="form-group">
           <label htmlFor="custAddress">Address</label>
@@ -631,7 +640,7 @@ function CustomerModal({ customer, error, onClose, onSave }) {
         </div>
         <div className="form-group">
           <label htmlFor="custPayterms">Payment terms</label>
-          <input id="custPayterms" name="payterms" value={form.payterms} onChange={update} placeholder="e.g. Net 30" required />
+          <input id="custPayterms" name="payterms" value={form.payterms} onChange={update} placeholder="e.g. N30" required maxLength={3} />
         </div>
         <div className="modal-actions">
           <button className="button button-outline" type="button" onClick={onClose}>Cancel</button>
