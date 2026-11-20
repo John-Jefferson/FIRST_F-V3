@@ -817,6 +817,16 @@ function CustomersPage({ user, users, customers, onSave, onChangeState }) {
             <span className="sr-only">Search customers</span>
             <span className="search-icon" aria-hidden="true">⌕</span>
             <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search customers" />
+{search && (
+  <button
+    type="button"
+    className="table-action"
+    onClick={() => setSearch('')}
+    aria-label="Clear customer search"
+  >
+    Clear
+  </button>
+)}
           </label>
           {canAdd && <button className="button button-primary" onClick={() => openForm()}>＋ Add customer</button>}
         </div>
