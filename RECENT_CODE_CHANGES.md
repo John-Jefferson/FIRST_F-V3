@@ -88,3 +88,7 @@ In the Supabase project's Auth URL Configuration, allow `http://localhost:5173/m
 ## Important database note
 
 No Supabase database migration was applied. UI permission checks do not change RLS; the database remains the authority for ERP writes.
+
+## November 2026 — Database & Auth Stabilization
+- **Audit Logging (`S1-DBA-06`):** Finalized `public.audit_logs` table, `audit_user_action()` trigger, and RLS configuration; cleared temporary `audit_test_items` test records.
+- **Authentication & Onboarding:** Configured Supabase Site URL and Redirect URLs (`http://localhost:5173/**`) for local Vite development and verified `public.app_profiles` status transitions (`pending` -> `active`).
