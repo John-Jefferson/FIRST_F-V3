@@ -1,7 +1,7 @@
 # Hope Inc. ERP - Database Security & Access Architecture
 
 ## Overview
-This document outlines the database security framework, access control policies, and migration structure implemented within the Supabase (PostgreSQL) database for the ERP system, corresponding to core security migrations (`secure_erp_access` and `admin_only_erp_writes`).
+This document outlines the database security framework, access control policies, and migration structure implemented within the Supabase (PostgreSQL) database for the ERP system.
 
 ---
 
@@ -15,10 +15,15 @@ This document outlines the database security framework, access control policies,
   * Maps database session claims to user authentication tokens.
 
 ### 2. `20261104010000_admin_only_erp_writes.sql`
-* **Purpose:** Enforces role-based write protection for administrative actions.
+* **Purpose:** Removes anonymous access and applies a temporary admin-only write policy.
 * **Key Mechanisms:**
-  * Restricts modification operations (`INSERT`, `UPDATE`, `DELETE`) exclusively to users assigned an administrator role.
-  * Implements validation checks via custom PostgreSQL security policies to block unauthorized data tampering from standard staff profiles.
+  * Restricts modification operations to active administrators while the initial database security policies are deployed.
+
+### 3. `20261121000000_restore_permission_based_erp_writes.sql`
+* **Purpose:** Restores HopeWeb's per-action access model for the core ERP tables.
+* **Key Mechanisms:**
+  * Lets active users read, add, edit, or soft-delete records only when their profile has the matching permission.
+  * Keeps admin and superadmin full access and continues to enforce these rules in PostgreSQL RLS.
 
 ---
 
@@ -27,11 +32,11 @@ This document outlines the database security framework, access control policies,
 | Role | Read Access (`SELECT`) | Write Access (`INSERT`, `UPDATE`, `DELETE`) |
 | :--- | :--- | :--- |
 | **Anonymous / Public** | Blocked (`FALSE`) | Blocked (`FALSE`) |
-| **Authenticated Staff** | Allowed | Restricted / Read-Only |
-| **Administrator** | Allowed | Allowed |
+| **Active User** | Allowed only for assigned modules and reports | Allowed only for individually assigned actions; deletes are soft deletes |
+| **Administrator / Superadmin** | Allowed across ERP modules | Allowed across ERP modules; deletes are soft deletes |
 
 ---
 
 ## Security Best Practices Enforced
-- **Principle of Least Privilege:** Standard users can inspect data but cannot alter system-wide records.
+- **Principle of Least Privilege:** User actions are limited by their assigned permissions, enforced in the database.
 - **Token-Based Verification:** Supabase JWT claims validate requests securely at the database query level.

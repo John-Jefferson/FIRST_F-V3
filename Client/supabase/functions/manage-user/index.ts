@@ -6,6 +6,20 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+const DEFAULT_USER_PERMISSIONS = [
+  'customers.view',
+  'customers.add',
+  'customers.edit',
+  'products.view',
+  'products.add',
+  'products.edit',
+  'sales.view',
+  'sales.detailView',
+  'reports.view',
+  'reports.productMaster',
+  'reports.topSales',
+];
+
 function jsonResponse(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), {
     status,
@@ -112,7 +126,7 @@ Deno.serve(async (request: Request) => {
 
     const { data: target, error: targetError } = await adminClient
       .from('app_profiles')
-      .select('id, role, status')
+      .select('id, role, status, permissions')
       .eq('id', userId)
       .single();
 
@@ -134,9 +148,19 @@ Deno.serve(async (request: Request) => {
       return jsonResponse(500, { error: `Could not update authentication status: ${authUpdateError.message}` });
     }
 
+    const profileUpdate: { status: string; permissions?: string[] } = { status };
+    if (
+      status === 'active'
+      && target.status === 'pending'
+      && target.role === 'user'
+      && (!Array.isArray(target.permissions) || target.permissions.length === 0)
+    ) {
+      profileUpdate.permissions = DEFAULT_USER_PERMISSIONS;
+    }
+
     const { error: profileError } = await adminClient
       .from('app_profiles')
-      .update({ status })
+      .update(profileUpdate)
       .eq('id', userId);
 
     if (profileError) {
