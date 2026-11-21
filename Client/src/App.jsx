@@ -10,13 +10,19 @@ const PERMISSIONS = [
   'hr.jhEdit', 'hr.jhDelete',
   'sales.view', 'sales.add', 'sales.edit', 'sales.delete',
   'sales.detailView', 'sales.detailAdd', 'sales.detailEdit', 'sales.detailDelete',
-  'payments.view', 'payments.add', 'payments.edit', 'payments.delete',
   'reports.view', 'reports.topCustomers', 'reports.productMaster', 'reports.topProducts',
   'reports.activeEmployees', 'reports.allEmployees', 'reports.empJobHistory', 'reports.topSales',
 ];
+const PERMISSION_GROUP_VIEWS = {
+  customers: 'customers.view',
+  products: 'products.view',
+  hr: 'hr.view',
+  sales: 'sales.view',
+  reports: 'reports.view',
+};
 const EMPTY_DATA = {
   customers: [], products: [], prices: [], employees: [], jobs: [], departments: [],
-  jobHistory: [], sales: [], saleDetails: [], payments: [],
+  jobHistory: [], sales: [], saleDetails: [],
 };
 const ERP_TABLES = {
   customers: { name: 'customer', keys: ['custno'] },
@@ -28,14 +34,24 @@ const ERP_TABLES = {
   jobHistory: { name: 'jobhistory', keys: ['empno', 'jobcode', 'effdate'] },
   sales: { name: 'sales', keys: ['transno'] },
   saleDetails: { name: 'salesdetail', keys: ['transno', 'prodcode'] },
-  payments: { name: 'payment', keys: ['orno'] },
+};
+const WRITE_PERMISSIONS = {
+  customers: { add: 'customers.add', edit: 'customers.edit', delete: 'customers.delete' },
+  products: { add: 'products.add', edit: 'products.edit', delete: 'products.delete' },
+  prices: { add: 'products.priceAdd', edit: 'products.priceEdit', delete: 'products.priceDelete' },
+  employees: { add: 'hr.empAdd', edit: 'hr.empEdit', delete: 'hr.empDelete' },
+  jobs: { add: 'hr.jobAdd', edit: 'hr.jobEdit', delete: 'hr.jobDelete' },
+  departments: { add: 'hr.deptAdd', edit: 'hr.deptEdit', delete: 'hr.deptDelete' },
+  jobHistory: { add: 'hr.jhAdd', edit: 'hr.jhEdit', delete: 'hr.jhDelete' },
+  sales: { add: 'sales.add', edit: 'sales.edit', delete: 'sales.delete' },
+  saleDetails: { add: 'sales.detailAdd', edit: 'sales.detailEdit', delete: 'sales.detailDelete' },
 };
 const DATABASE_FIELD_NAMES = {
   empno: 'empNo', lastname: 'lastName', firstname: 'firstName', birthdate: 'birthDate',
   hiredate: 'hireDate', sepdate: 'sepDate', deptcode: 'deptCode', jobcode: 'jobCode',
   effdate: 'effDate', custno: 'custNo', custname: 'custName', payterm: 'payterms',
   prodcode: 'prodCode', unitprice: 'unitPrice', transno: 'transNo', salesdate: 'salesDate',
-  paydate: 'payDate', orno: 'orNo', is_deleted: 'isDeleted',
+  is_deleted: 'isDeleted',
 };
 function fromDatabaseRow(row) {
   return Object.fromEntries(Object.entries(row).map(([key, value]) => [DATABASE_FIELD_NAMES[key] || key, value]));
@@ -188,7 +204,6 @@ const MODULES = [
   { id: 'products', label: 'Products', initials: 'PR', permission: 'products.view' },
   { id: 'hr', label: 'Human resources', initials: 'HR', permission: 'hr.view' },
   { id: 'sales', label: 'Sales', initials: 'SA', permission: 'sales.view' },
-  { id: 'payments', label: 'Payments', initials: 'PM', permission: 'payments.view' },
   { id: 'reports', label: 'Reports', initials: 'RE', permission: 'reports.view' },
   { id: 'users', label: 'Users', initials: 'US', adminOnly: true },
   { id: 'audit', label: 'Audit Log', initials: 'AL', adminOnly: true },
@@ -698,7 +713,7 @@ function LandingPage({ openAuth }) {
                 <div className="preview-list-heading"><strong>Workspace modules</strong><span>One source of truth</span></div>
                 <div><span className="preview-initial">PR</span><span>Products &amp; pricing<small>Effective-dated price history</small></span><i>Connected</i></div>
                 <div><span className="preview-initial preview-initial-alt">HR</span><span>People &amp; departments<small>Employee job history</small></span><i>Connected</i></div>
-                <div><span className="preview-initial preview-initial-third">SA</span><span>Sales &amp; payments<small>Transactions and receipts</small></span><i>Connected</i></div>
+                <div><span className="preview-initial preview-initial-third">SA</span><span>Sales management<small>Transactions and line items</small></span><i>Connected</i></div>
               </div>
             </div>
             <div className="preview-footer"><span className="status-dot" /> All systems ready <span>Secure workspace</span></div>
@@ -776,9 +791,9 @@ function Overview({ user, users, data, onNavigate }) {
 
 function CustomersPage({ user, users, customers, onSave, onChangeState }) {
   const admin = isAdmin(user);
-  const canAdd = admin;
-  const canEdit = admin;
-  const canDelete = admin;
+  const canAdd = hasPermission(user, 'customers.add', users);
+  const canEdit = hasPermission(user, 'customers.edit', users);
+  const canDelete = hasPermission(user, 'customers.delete', users);
   const [filter, setFilter] = useState('active');
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState(null);
@@ -981,21 +996,12 @@ const COLLECTIONS = {
       { key: 'quantity', label: 'Quantity', type: 'number' },
     ],
   },
-  payments: {
-    label: 'Payments', singular: 'payment', permission: 'payments',
-    key: ['orNo'], fields: [
-      { key: 'orNo', label: 'Receipt no.' }, { key: 'payDate', label: 'Payment date', type: 'date' },
-      { key: 'amount', label: 'Amount', type: 'number' },
-      { key: 'transNo', label: 'Sale transaction', type: 'select', source: 'sales', sourceKey: 'transNo', sourceLabel: 'transNo' },
-    ],
-  },
 };
 
 const SECTION_TABS = {
   products: ['products', 'prices'],
   hr: ['employees', 'jobs', 'departments', 'jobHistory'],
   sales: ['sales', 'saleDetails'],
-  payments: ['payments'],
 };
 
 function recordKey(record, collection) {
@@ -1083,11 +1089,10 @@ function RecordsPage({ section, user, users, data, customers, onSave, onChangeSt
     jobHistory: { add: 'hr.jhAdd', edit: 'hr.jhEdit', delete: 'hr.jhDelete' },
     sales: { add: 'sales.add', edit: 'sales.edit', delete: 'sales.delete' },
     saleDetails: { add: 'sales.detailAdd', edit: 'sales.detailEdit', delete: 'sales.detailDelete' },
-    payments: { add: 'payments.add', edit: 'payments.edit', delete: 'payments.delete' },
   }[collection];
-  const canAdd = isAdmin(user);
-  const canEdit = isAdmin(user);
-  const canDelete = isAdmin(user);
+  const canAdd = hasPermission(user, actionPermissions.add, users);
+  const canEdit = hasPermission(user, actionPermissions.edit, users);
+  const canDelete = hasPermission(user, actionPermissions.delete, users);
   const records = data[collection] || [];
   const filtered = records.filter((record) => {
     if (!isAdmin(user) && record.isDeleted) return false;
@@ -1401,7 +1406,13 @@ function UserManagement({ user, users, onSave, onDelete, onStatus, onPermissions
   }
 
   function togglePermission(permission) {
-    setRights((current) => current.includes(permission) ? current.filter((value) => value !== permission) : [...current, permission]);
+    const group = Object.entries(PERMISSION_GROUP_VIEWS).find(([, viewPermission]) => viewPermission === permission)?.[0];
+    setRights((current) => {
+      if (current.includes(permission)) {
+        return current.filter((value) => value !== permission && (!group || !value.startsWith(`${group}.`)));
+      }
+      return [...current, permission];
+    });
   }
 
   return (
@@ -1443,10 +1454,11 @@ function UserManagement({ user, users, onSave, onDelete, onStatus, onPermissions
         </form>
       </Modal>}
       {rightsUser && <Modal title={`Permissions · ${rightsUser.firstName}`} subtitle="Choose the modules and actions this user can access." onClose={() => setRightsUser(null)} wide>
-        <div className="rights-grid">{['customers', 'products', 'hr', 'sales', 'payments', 'reports'].map((group) => {
+        <div className="rights-grid">{['customers', 'products', 'hr', 'sales', 'reports'].map((group) => {
           const permissions = PERMISSIONS.filter((permission) => permission.startsWith(`${group}.`));
+          const viewPermission = PERMISSION_GROUP_VIEWS[group];
           return <fieldset key={group}><legend>{group === 'hr' ? 'Human resources' : group[0].toUpperCase() + group.slice(1)}</legend>
-            {permissions.map((permission) => <label key={permission}><input type="checkbox" checked={rights.includes(permission)} onChange={() => togglePermission(permission)} /><span>{permission.split('.').slice(1).join(' · ').replace(/([A-Z])/g, ' $1')}</span></label>)}
+            {permissions.map((permission) => <label key={permission}><input type="checkbox" checked={rights.includes(permission)} disabled={permission !== viewPermission && !rights.includes(viewPermission)} onChange={() => togglePermission(permission)} /><span>{permission === viewPermission ? 'View module' : permission.split('.').slice(1).join(' · ').replace(/([A-Z])/g, ' $1')}</span></label>)}
           </fieldset>;
         })}</div>
         <div className="modal-actions rights-actions"><button className="button button-outline" onClick={() => setRightsUser(null)}>Cancel</button><button className="button button-primary" onClick={() => { onPermissions(rightsUser.email, rights); setRightsUser(null); }}>Save permissions</button></div>
@@ -1487,14 +1499,14 @@ function Dashboard({ user, users, customers, data, dataError, dataLoading, onRel
       <main className="dashboard-main">
         <div className="page-heading"><div><span className="section-kicker">HOPE, INC. ERP / WORKSPACE</span><h1>{currentPage.label}</h1></div><span className="page-date">{new Intl.DateTimeFormat('en', { dateStyle: 'full' }).format(new Date())}</span></div>
         <div className="local-demo-warning" role="note">
-          Supabase Auth secures your session. Database RLS controls access: only active admins and superadmins can add, edit, or soft-delete ERP records.
+          Supabase Auth secures your session. Database RLS grants each active account access only to the modules and actions assigned to it.
           <button className="button button-outline" onClick={onReloadData} disabled={dataLoading}>{dataLoading ? 'Loading…' : 'Refresh ERP data'}</button>
         </div>
         {dataError && <div className="app-notice"><Alert message={{ type: 'error', text: dataError }} /></div>}
         {appError && <div className="app-notice"><Alert message={{ type: 'error', text: appError }} /><button className="icon-button" onClick={clearError} aria-label="Dismiss error">×</button></div>}
         {currentPage.id === 'dashboard' && <Overview user={user} users={users} data={data} onNavigate={setActivePage} />}
         {currentPage.id === 'customers' && <CustomersPage user={user} users={users} customers={customers} onSave={onCustomerSave} onChangeState={onCustomerState} />}
-        {['products', 'hr', 'sales', 'payments'].includes(currentPage.id) && <RecordsPage key={currentPage.id} section={currentPage.id} user={user} users={users} data={data} customers={customers} onSave={onRecordSave} onChangeState={onRecordState} />}
+        {['products', 'hr', 'sales'].includes(currentPage.id) && <RecordsPage key={currentPage.id} section={currentPage.id} user={user} users={users} data={data} customers={customers} onSave={onRecordSave} onChangeState={onRecordState} />}
         {currentPage.id === 'reports' && <ReportsPage user={user} users={users} data={data} customers={customers} />}
         {currentPage.id === 'users' && <UserManagement user={user} users={users} onSave={onUserSave} onDelete={onUserDelete} onStatus={onUserStatus} onPermissions={onUserPermissions} />}
         {currentPage.id === 'audit' && <AuditLogPage />}
@@ -1601,7 +1613,10 @@ return () => {
   }, [authUser]);
 
   async function saveRecord(collection, record, keyFields, editKey = null) {
-    if (!isAdmin(currentUser)) return { error: 'Only admins and superadmins can change ERP data.' };
+    const permission = WRITE_PERMISSIONS[collection]?.[editKey ? 'edit' : 'add'];
+    if (!permission || !hasPermission(currentUser, permission, users)) {
+      return { error: 'Your account does not have permission to make this change.' };
+    }
     const cleaned = Object.fromEntries(Object.entries(record).filter(([key]) => !['isDeleted', 'stamp'].includes(key)));
     let query = supabase.from(ERP_TABLES[collection].name);
     if (editKey) {
@@ -1648,7 +1663,10 @@ return () => {
   }
 
   async function changeRecordState(collection, key, isDeleted) {
-    if (!isAdmin(currentUser)) return setAppError('Only admins and superadmins can change ERP data.');
+    const permission = WRITE_PERMISSIONS[collection]?.delete;
+    if (!permission || !hasPermission(currentUser, permission, users)) {
+      return setAppError('Your account does not have permission to change this record status.');
+    }
     const config = collection === 'customers' ? { key: ['custNo'] } : COLLECTIONS[collection];
     let query = supabase.from(ERP_TABLES[collection].name).update({ is_deleted: isDeleted });
     key.split('|').forEach((value, index) => {

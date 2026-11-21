@@ -1,0 +1,66 @@
+name: Bug report
+description: Report a reproducible problem in Hope, Inc. ERP.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Report one issue per submission. Do not include passwords, access tokens,
+        service-role keys, personal customer data, or other sensitive information.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of the application is affected?
+      options:
+        - Sign in or account management
+        - Overview
+        - Customers
+        - Products or price history
+        - Human resources
+        - Sales
+        - Payments
+        - Reports
+        - Database or permissions
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Describe the problem and its impact.
+      placeholder: A clear description of the unexpected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include the page and actions needed to reproduce the problem.
+      placeholder: |
+        1. Sign in with an appropriate test account.
+        2. Open ...
+        3. Select ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Add a screenshot or error message if useful. Remove sensitive data first.
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser, operating system, and whether this was local, staging, or production.
+      placeholder: "e.g. Edge on Windows 11, local development"
+    validations:
+      required: true
