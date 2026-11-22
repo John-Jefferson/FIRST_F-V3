@@ -1,0 +1,12 @@
+const ERP_WRITE_PERMISSIONS = {
+  customers: { add: 'customers.add', edit: 'customers.edit', delete: 'customers.delete' },
+  products: { add: 'products.add', edit: 'products.edit', delete: 'products.delete' },
+  prices: { add: 'products.priceAdd', edit: 'products.priceEdit', delete: 'products.priceDelete' },
+  employees: { add: 'hr.empAdd', edit: 'hr.empEdit', delete: 'hr.empDelete' },
+  jobs: { add: 'hr.jobAdd', edit: 'hr.jobEdit', delete: 'hr.jobDelete' },
+  departments: { add: 'hr.deptAdd', edit: 'hr.deptEdit', delete: 'hr.deptDelete' },
+  jobHistory: { add: 'hr.jhAdd', edit: 'hr.jhEdit', delete: 'hr.jhDelete' },
+  sales: { add: 'sales.add', edit: 'sales.edit', delete: 'sales.delete' },
+  saleDetails: { add: 'sales.detailAdd', edit: 'sales.detailEdit', delete: 'sales.detailDelete' },
+  payments: { add: 'payments.add', edit: 'payments.edit', delete: 'payments.delete' },
+};
