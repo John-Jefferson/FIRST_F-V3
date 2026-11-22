@@ -264,105 +264,35 @@ function Modal({ title, subtitle, onClose, children, wide = false }) {
     </div>
   );
 }
-
-function PermanentDeleteModal({ target, onClose, onPreview, onDelete }) {
-  const [impact, setImpact] = useState(null);
-  const [selected, setSelected] = useState([]);
-  const [busy, setBusy] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    let active = true;
-    onPreview(target.table, target.key).then((result) => {
-      if (!active) return;
-      if (result.error) setError(result.error);
-      else setImpact(result);
-      setBusy(false);
-    }).catch((requestError) => {
-      if (!active) return;
-      setError(requestError.message || 'Could not load the deletion impact.');
-      setBusy(false);
-    });
-    return () => { active = false; };
-  }, [onPreview, target]);
-
-  const ready = Boolean(impact)
-    && impact.records.every((record) => selected.includes(record.id));
-  const relatedRecordCount = impact?.records.reduce((count, record) => count + (record.count || 1), 0) || 0;
-
-  async function confirmDelete() {
-    setSaving(true);
-    setError('');
-    try {
-      const result = await onDelete(target.table, target.key, selected);
-      if (result.error) setError(result.error);
-      else onClose();
-    } catch (requestError) {
-      setError(requestError.message || 'Could not permanently delete these records.');
-    } finally {
-      setSaving(false);
-    }
-  }
+function PasswordField({ id, label, value, onChange, autoComplete = 'new-password', minLength, helpText }) {
+  const [visible, setVisible] = useState(false);
 
   return (
-    <Modal title={`Permanently delete ${target.label}?`} subtitle="This cannot be undone. Review every related record before confirming." onClose={onClose} wide>
-      <div className="modal-body permanent-delete-body">
-        <Alert message={error ? { type: 'error', text: error } : null} />
-        {busy ? <p role="status">Checking related records…</p> : impact && (
-          <>
-            <p className="delete-impact-summary">
-              Your permission to delete this record also authorizes deleting its related records. Select every listed row to continue.
-              Linked payment records will also be permanently deleted.
-            </p>
-            {impact.records.length > 0 && (
-              <>
-                <div className="delete-impact-actions">
-                  <strong>{relatedRecordCount} related record(s)</strong>
-                  <button
-                    className="text-button"
-                    type="button"
-                    onClick={() => setSelected(impact.records.map((record) => record.id))}
-                  >
-                    Select all related records
-                  </button>
-                </div>
-                <ul className="delete-impact-list">
-                  {impact.records.map((record) => (
-                    <li key={record.id}>
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={selected.includes(record.id)}
-                          disabled={saving}
-                          onChange={(event) => setSelected((current) => event.target.checked
-                            ? [...current, record.id]
-                            : current.filter((id) => id !== record.id))}
-                        />
-                        <span>
-                          <strong>{record.label}</strong>
-                          <small>{record.table} · {record.count
-                            ? `${record.count} payment record(s)`
-                            : record.isDeleted ? 'already inactive' : 'active'}</small>
-                        </span>
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-            {!impact.records.length && <p>No related records were found.</p>}
-            <div className="modal-actions">
-              <button className="button button-outline" type="button" onClick={onClose} disabled={saving}>Cancel</button>
-              <button className="button button-danger" type="button" onClick={confirmDelete} disabled={!ready || saving}>
-                {saving ? 'Deleting…' : `Permanently delete ${relatedRecordCount + 1} record(s)`}
-              </button>
-            </div>
-          </>
-        )}
-        {!busy && !impact && <div className="modal-actions"><button className="button button-outline" type="button" onClick={onClose}>Close</button></div>}
+    <div className="form-group">
+      <label htmlFor={id}>{label}</label>
+      <div className="password-input">
+        <input
+          id={id}
+          type={visible ? 'text' : 'password'}
+          minLength={minLength}
+          autoComplete={autoComplete}
+          value={value}
+          onChange={onChange}
+          required
+        />
+        <button
+          className="password-toggle"
+          type="button"
+          aria-controls={id}
+          aria-label={`${visible ? 'Hide' : 'Show'} ${label.toLowerCase()}`}
+          aria-pressed={visible}
+          onClick={() => setVisible((current) => !current)}
+        >
+          {visible ? 'Hide' : 'Show'}
+        </button>
       </div>
-    </Modal>
+      {helpText && <small className="form-help">{helpText}</small>}
+    </div>
   );
 }
 
@@ -377,6 +307,17 @@ function RegisterModal({ onClose, onRegister }) {
   async function submit(event) {
     event.preventDefault();
     setMessage(null);
+
+    if (!email.trim()) {
+      setMessage({ type: 'error', text: 'EMAIL IS REQUIRED' });
+      return;
+    }
+
+    if (!event.currentTarget.checkValidity()) {
+      event.currentTarget.reportValidity();
+      return;
+    }
+
     setBusy(true);
 
     try {
@@ -416,7 +357,7 @@ function RegisterModal({ onClose, onRegister }) {
       subtitle="Create your Hope, Inc. ERP account"
       onClose={onClose}
     >
-      <form className="modal-body" onSubmit={submit}>
+      <form className="modal-body" onSubmit={submit} noValidate>
         <Alert message={message} />
 
         <div className="role-note">
@@ -457,18 +398,13 @@ function RegisterModal({ onClose, onRegister }) {
           />
         </div>
 
-        <div className="form-group">
-          <label htmlFor="regPassword">Password</label>
-          <input
-            id="regPassword"
-            type="password"
-            minLength="8"
-            autoComplete="new-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </div>
+        <PasswordField
+          id="regPassword"
+          label="Password"
+          minLength="8"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+        />
 
         <button
           className="button button-primary button-full"
@@ -492,6 +428,17 @@ function LoginModal({ onClose, onSignIn, onRequestReset }) {
   async function submit(event) {
     event.preventDefault();
     setMessage(null);
+
+    if (!email.trim()) {
+      setMessage({ type: 'error', text: 'EMAIL IS REQUIRED' });
+      return;
+    }
+
+    if (!event.currentTarget.checkValidity()) {
+      event.currentTarget.reportValidity();
+      return;
+    }
+
     setBusy(true);
 
     try {
@@ -549,7 +496,7 @@ async function handleForgotPassword() {
       subtitle="Sign in to your account"
       onClose={onClose}
     >
-      <form className="modal-body" onSubmit={submit}>
+      <form className="modal-body" onSubmit={submit} noValidate>
         <Alert message={message} />
 
         <div className="role-note">
@@ -582,17 +529,13 @@ async function handleForgotPassword() {
           />
         </div>
 
-        <div className="form-group">
-          <label htmlFor="loginPassword">Password</label>
-          <input
-            id="loginPassword"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </div>
+        <PasswordField
+          id="loginPassword"
+          label="Password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+        />
 
         <button
           className="button button-primary button-full"
@@ -672,31 +615,21 @@ function ResetPasswordModal({ onUpdatePassword, onClose }) {
       <form className="modal-body" onSubmit={submit}>
         <Alert message={message} />
 
-        <div className="form-group">
-          <label htmlFor="newPassword">New Password</label>
-          <input
-            id="newPassword"
-            type="password"
-            autoComplete="new-password"
-            minLength="8"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </div>
+        <PasswordField
+          id="newPassword"
+          label="New Password"
+          minLength="8"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+        />
 
-        <div className="form-group">
-          <label htmlFor="confirmNewPassword">Confirm New Password</label>
-          <input
-            id="confirmNewPassword"
-            type="password"
-            autoComplete="new-password"
-            minLength="8"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            required
-          />
-        </div>
+        <PasswordField
+          id="confirmNewPassword"
+          label="Confirm New Password"
+          minLength="8"
+          value={confirmPassword}
+          onChange={(event) => setConfirmPassword(event.target.value)}
+        />
 
         <button
           className="button button-primary button-full"
@@ -1575,7 +1508,7 @@ function UserManagement({ user, users, onSave, onDelete, onStatus, onPermissions
           <div className="form-row"><div className="form-group"><label htmlFor="user-first">First name</label><input id="user-first" value={form.firstName} onChange={(event) => setForm({ ...form, firstName: event.target.value })} required /></div>
             <div className="form-group"><label htmlFor="user-last">Last name</label><input id="user-last" value={form.lastName} onChange={(event) => setForm({ ...form, lastName: event.target.value })} required /></div></div>
           <div className="form-group"><label htmlFor="user-email">Email</label><input id="user-email" type="email" value={form.email} readOnly={Boolean(editing)} onChange={(event) => setForm({ ...form, email: event.target.value })} required /></div>
-          {!editing && <div className="form-group"><label htmlFor="user-password">Temporary password</label><input id="user-password" type="password" minLength="8" autoComplete="new-password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required /><small className="form-help">At least 8 characters. Share it securely with the new user.</small></div>}
+          {!editing && <PasswordField id="user-password" label="Temporary password" minLength="8" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} helpText="At least 8 characters. Share it securely with the new user." />}
           {isSuper && <div className="form-group"><label htmlFor="user-role">Role</label><select id="user-role" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })}><option value="user">User</option><option value="admin">Admin</option><option value="superadmin">Superadmin</option></select></div>}
           <div className="modal-actions"><button type="button" className="button button-outline" onClick={() => setEditing(null)}>Cancel</button><button className="button button-primary" type="submit">Save account</button></div>
         </form>
@@ -1624,20 +1557,22 @@ function Dashboard({ user, users, customers, data, dataError, dataLoading, onRel
           <button className="button button-ghost logout-button" onClick={onLogout}>Sign out</button></div>
       </header>
       <main className="dashboard-main">
-        <div className="page-heading"><div><span className="section-kicker">HOPE, INC. ERP / WORKSPACE</span><h1>{currentPage.label}</h1></div><span className="page-date">{new Intl.DateTimeFormat('en', { dateStyle: 'full' }).format(new Date())}</span></div>
-        <div className="local-demo-warning" role="note">
-          Supabase Auth secures your session. Database RLS grants each active account access only to the modules and actions assigned to it.
-          <button className="button button-outline" onClick={onReloadData} disabled={dataLoading}>{dataLoading ? 'Loading…' : 'Refresh ERP data'}</button>
+        <div key={currentPage.id} className="page-transition">
+          <div className="page-heading"><div><span className="section-kicker">HOPE, INC. ERP / WORKSPACE</span><h1>{currentPage.label}</h1></div><span className="page-date">{new Intl.DateTimeFormat('en', { dateStyle: 'full' }).format(new Date())}</span></div>
+          <div className="local-demo-warning" role="note">
+            Supabase Auth secures your session. Database RLS grants each active account access only to the modules and actions assigned to it.
+            <button className="button button-outline" onClick={onReloadData} disabled={dataLoading}>{dataLoading ? 'Loading…' : 'Refresh ERP data'}</button>
+          </div>
+          {dataError && <div className="app-notice"><Alert message={{ type: 'error', text: dataError }} /></div>}
+          {appError && <div className="app-notice"><Alert message={{ type: 'error', text: appError }} /><button className="icon-button" onClick={clearError} aria-label="Dismiss error">×</button></div>}
+          {currentPage.id === 'dashboard' && <Overview user={user} users={users} data={data} onNavigate={setActivePage} />}
+          {currentPage.id === 'customers' && <CustomersPage user={user} users={users} customers={customers} onSave={onCustomerSave} onChangeState={onCustomerState} onDeletePreview={onDeletePreview} onPermanentDelete={onPermanentDelete} />}
+          {['products', 'hr', 'sales'].includes(currentPage.id) && <RecordsPage key={currentPage.id} section={currentPage.id} user={user} users={users} data={data} customers={customers} onSave={onRecordSave} onChangeState={onRecordState} onDeletePreview={onDeletePreview} onPermanentDelete={onPermanentDelete} />}
+          {currentPage.id === 'reports' && <ReportsPage user={user} users={users} data={data} customers={customers} />}
+          {currentPage.id === 'users' && <UserManagement user={user} users={users} onSave={onUserSave} onDelete={onUserDelete} onStatus={onUserStatus} onPermissions={onUserPermissions} />}
+          {currentPage.id === 'audit' && <AuditLogPage />}
+          <footer className="dashboard-footer"><Brand compact /><span>© 2026 Hope, Inc. ERP · All rights reserved.</span></footer>
         </div>
-        {dataError && <div className="app-notice"><Alert message={{ type: 'error', text: dataError }} /></div>}
-        {appError && <div className="app-notice"><Alert message={{ type: 'error', text: appError }} /><button className="icon-button" onClick={clearError} aria-label="Dismiss error">×</button></div>}
-        {currentPage.id === 'dashboard' && <Overview user={user} users={users} data={data} onNavigate={setActivePage} />}
-        {currentPage.id === 'customers' && <CustomersPage user={user} users={users} customers={customers} onSave={onCustomerSave} onChangeState={onCustomerState} onDeletePreview={onDeletePreview} onPermanentDelete={onPermanentDelete} />}
-        {['products', 'hr', 'sales'].includes(currentPage.id) && <RecordsPage key={currentPage.id} section={currentPage.id} user={user} users={users} data={data} customers={customers} onSave={onRecordSave} onChangeState={onRecordState} onDeletePreview={onDeletePreview} onPermanentDelete={onPermanentDelete} />}
-        {currentPage.id === 'reports' && <ReportsPage user={user} users={users} data={data} customers={customers} />}
-        {currentPage.id === 'users' && <UserManagement user={user} users={users} onSave={onUserSave} onDelete={onUserDelete} onStatus={onUserStatus} onPermissions={onUserPermissions} />}
-        {currentPage.id === 'audit' && <AuditLogPage />}
-        <footer className="dashboard-footer"><Brand compact /><span>© 2026 Hope, Inc. ERP · All rights reserved.</span></footer>
       </main>
     </div>
   );
