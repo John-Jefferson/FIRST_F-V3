@@ -4,6 +4,8 @@ import json,pathlib,re,sys
 base=pathlib.Path(__file__).resolve().parent.parent
 rows=json.loads((base/'docs/task_definitions.json').read_text())
 assert len(rows)==24,'Expected exactly 24 tester tasks'
+ids=[row['id'] for row in rows]
+assert len(ids)==len(set(ids)), 'Duplicate tester task IDs found'
 for sprint in range(1,5):
  ids=[row['id'] for row in rows if row['sprint']==sprint]
  assert ids==[f'S{sprint}-TST-{i:02d}' for i in range(1,7)],(sprint,ids)
