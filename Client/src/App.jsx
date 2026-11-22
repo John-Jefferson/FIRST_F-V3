@@ -1083,15 +1083,25 @@ function RecordModal({ collection, record, data, customers, error, onClose, onSa
     config.fields.map((field) => [field.key, record?.[field.key] ?? '']),
   ));
   const [message, setMessage] = useState('');
+  const [saving, setSaving] = useState(false);
   const update = (event) => setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
   const sources = { ...data, customers };
 
   async function submit(event) {
-    event.preventDefault();
+  event.preventDefault();
+
+  if (saving) return;
+
+  setSaving(true);
+
+  try {
     const result = await onSave(collection, form, record ? recordKey(record, collection) : null);
     if (result.error) setMessage(result.error);
     else onClose();
+  } finally {
+    setSaving(false);
   }
+}
 
   return (
     <Modal title={`${record ? 'Edit' : 'Add'} ${config.singular}`} subtitle="Keep your workspace records up to date." onClose={onClose} wide>
@@ -1134,7 +1144,9 @@ function RecordModal({ collection, record, data, customers, error, onClose, onSa
         </div>
         <div className="modal-actions">
           <button className="button button-outline" type="button" onClick={onClose}>Cancel</button>
-          <button className="button button-primary" type="submit">{record ? 'Save changes' : 'Add record'}</button>
+          <button className="button button-primary" type="submit" disabled={saving}>
+            {saving ? 'Saving...' : record ? 'Save changes' : 'Add record'}
+          </button>
         </div>
       </form>
     </Modal>
