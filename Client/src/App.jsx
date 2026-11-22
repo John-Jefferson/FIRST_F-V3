@@ -25,6 +25,7 @@ const EMPTY_DATA = {
   customers: [], products: [], prices: [], employees: [], jobs: [], departments: [],
   jobHistory: [], sales: [], saleDetails: [],
 };
+// ERP_TABLES is also the list of stable primary-keyed collections loaded into the workspace.
 const ERP_TABLES = {
   customers: { name: 'customer', keys: ['custno'] },
   products: { name: 'product', keys: ['prodcode'] },
