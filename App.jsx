@@ -677,13 +677,17 @@ function recordKey(record, collection) {
   return COLLECTIONS[collection].key.map((key) => record[key]).join('|');
 }
 
-function RecordModal({ collection, record, data, customers, error, onClose, onSave }) {
+function RecordModal({ collection, record, data, customers, error, onClose, onSave, onClearError }) {
   const config = COLLECTIONS[collection];
   const [form, setForm] = useState(() => Object.fromEntries(
     config.fields.map((field) => [field.key, record?.[field.key] ?? '']),
   ));
   const [message, setMessage] = useState('');
-  const update = (event) => setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
+  const update = (event) => {
+    setMessage('');
+    onClearError();
+    setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
+    };
   const sources = { ...data, customers };
 
   async function submit(event) {
@@ -820,7 +824,7 @@ function RecordsPage({ section, user, users, data, customers, onSave, onChangeSt
           </tbody>
         </table></div>
       </section>
-      {modalOpen && <RecordModal collection={collection} record={editing} data={data} customers={customers} error={error} onClose={() => { setEditing(null); setModalOpen(false); }} onSave={save} />}
+      {modalOpen && <RecordModal collection={collection} record={editing} data={data} customers={customers} error={error} onClearError={() => setError('')} onClose={() => { setEditing(null); setModalOpen(false); }} onSave={save} />}
     </>
   );
 }
