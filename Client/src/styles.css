@@ -86,10 +86,10 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   font-size: 13px;
   font-weight: 600;
   text-decoration: none;
-  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
-.button:hover { transform: translateY(-1px); }
+.button:hover { transform: translateY(-2px); }
 .button-primary { background: var(--accent); color: white; }
 .button-primary:hover { background: var(--accent-hover); }
 .button-danger { background: #8b2424; color: white; }

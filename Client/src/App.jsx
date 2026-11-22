@@ -1557,20 +1557,22 @@ function Dashboard({ user, users, customers, data, dataError, dataLoading, onRel
           <button className="button button-ghost logout-button" onClick={onLogout}>Sign out</button></div>
       </header>
       <main className="dashboard-main">
-        <div className="page-heading"><div><span className="section-kicker">HOPE, INC. ERP / WORKSPACE</span><h1>{currentPage.label}</h1></div><span className="page-date">{new Intl.DateTimeFormat('en', { dateStyle: 'full' }).format(new Date())}</span></div>
-        <div className="local-demo-warning" role="note">
-          Supabase Auth secures your session. Database RLS grants each active account access only to the modules and actions assigned to it.
-          <button className="button button-outline" onClick={onReloadData} disabled={dataLoading}>{dataLoading ? 'Loading…' : 'Refresh ERP data'}</button>
+        <div key={currentPage.id} className="page-transition">
+          <div className="page-heading"><div><span className="section-kicker">HOPE, INC. ERP / WORKSPACE</span><h1>{currentPage.label}</h1></div><span className="page-date">{new Intl.DateTimeFormat('en', { dateStyle: 'full' }).format(new Date())}</span></div>
+          <div className="local-demo-warning" role="note">
+            Supabase Auth secures your session. Database RLS grants each active account access only to the modules and actions assigned to it.
+            <button className="button button-outline" onClick={onReloadData} disabled={dataLoading}>{dataLoading ? 'Loading…' : 'Refresh ERP data'}</button>
+          </div>
+          {dataError && <div className="app-notice"><Alert message={{ type: 'error', text: dataError }} /></div>}
+          {appError && <div className="app-notice"><Alert message={{ type: 'error', text: appError }} /><button className="icon-button" onClick={clearError} aria-label="Dismiss error">×</button></div>}
+          {currentPage.id === 'dashboard' && <Overview user={user} users={users} data={data} onNavigate={setActivePage} />}
+          {currentPage.id === 'customers' && <CustomersPage user={user} users={users} customers={customers} onSave={onCustomerSave} onChangeState={onCustomerState} onDeletePreview={onDeletePreview} onPermanentDelete={onPermanentDelete} />}
+          {['products', 'hr', 'sales'].includes(currentPage.id) && <RecordsPage key={currentPage.id} section={currentPage.id} user={user} users={users} data={data} customers={customers} onSave={onRecordSave} onChangeState={onRecordState} onDeletePreview={onDeletePreview} onPermanentDelete={onPermanentDelete} />}
+          {currentPage.id === 'reports' && <ReportsPage user={user} users={users} data={data} customers={customers} />}
+          {currentPage.id === 'users' && <UserManagement user={user} users={users} onSave={onUserSave} onDelete={onUserDelete} onStatus={onUserStatus} onPermissions={onUserPermissions} />}
+          {currentPage.id === 'audit' && <AuditLogPage />}
+          <footer className="dashboard-footer"><Brand compact /><span>© 2026 Hope, Inc. ERP · All rights reserved.</span></footer>
         </div>
-        {dataError && <div className="app-notice"><Alert message={{ type: 'error', text: dataError }} /></div>}
-        {appError && <div className="app-notice"><Alert message={{ type: 'error', text: appError }} /><button className="icon-button" onClick={clearError} aria-label="Dismiss error">×</button></div>}
-        {currentPage.id === 'dashboard' && <Overview user={user} users={users} data={data} onNavigate={setActivePage} />}
-        {currentPage.id === 'customers' && <CustomersPage user={user} users={users} customers={customers} onSave={onCustomerSave} onChangeState={onCustomerState} onDeletePreview={onDeletePreview} onPermanentDelete={onPermanentDelete} />}
-        {['products', 'hr', 'sales'].includes(currentPage.id) && <RecordsPage key={currentPage.id} section={currentPage.id} user={user} users={users} data={data} customers={customers} onSave={onRecordSave} onChangeState={onRecordState} onDeletePreview={onDeletePreview} onPermanentDelete={onPermanentDelete} />}
-        {currentPage.id === 'reports' && <ReportsPage user={user} users={users} data={data} customers={customers} />}
-        {currentPage.id === 'users' && <UserManagement user={user} users={users} onSave={onUserSave} onDelete={onUserDelete} onStatus={onUserStatus} onPermissions={onUserPermissions} />}
-        {currentPage.id === 'audit' && <AuditLogPage />}
-        <footer className="dashboard-footer"><Brand compact /><span>© 2026 Hope, Inc. ERP · All rights reserved.</span></footer>
       </main>
     </div>
   );
