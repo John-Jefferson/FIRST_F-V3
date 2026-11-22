@@ -313,8 +313,12 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .form-help { color: var(--muted); font-size: 11px; line-height: 1.5; }
 .form-group input { width: 100%; height: 44px; padding: 0 12px; border: 1px solid #e3e6e1; border-radius: 7px; background: white; color: var(--ink); font-size: 14px; transition: border-color 150ms ease, box-shadow 150ms ease; }
 .form-group input:focus { border-color: #74917d; outline: 0; box-shadow: 0 0 0 3px rgba(47, 121, 85, 0.1); }
+.password-input { position: relative; }
+.password-input input { padding-right: 64px; }
+.password-toggle { position: absolute; top: 50%; right: 9px; padding: 5px 3px; border: 0; background: transparent; color: #41694d; cursor: pointer; font-size: 12px; font-weight: 600; transform: translateY(-50%); }
+.password-toggle:hover { text-decoration: underline; }
 .form-group input[readonly] { background: #f7f8f6; color: #80857d; }
-.form-row { display: flex; gap: 12px; }
+.form-row { display: flex; gap: 12px; }  
 .form-row .form-group { min-width: 0; }
 .demo-hint { display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px; padding: 12px 13px; border: 1px solid #e8ece7; border-radius: 7px; background: #f8faf7; color: #555a53; font-size: 11px; line-height: 1.55; }
 .demo-hint strong { color: var(--ink); font-size: 12px; }
