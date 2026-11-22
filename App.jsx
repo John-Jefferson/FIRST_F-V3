@@ -170,7 +170,7 @@ function Modal({ title, subtitle, onClose, children, wide = false }) {
   );
 }
 
-function CustomerModal({ customer, error, onClose, onSave }) {
+function CustomerModal({ customer, error, onClose, onSave, onClearError }) {
   const [form, setForm] = useState({
     custNo: customer?.custNo || '',
     custName: customer?.custName || '',
@@ -179,6 +179,7 @@ function CustomerModal({ customer, error, onClose, onSave }) {
   });
 
   function update(event) {
+    onClearError();
     setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
   }
 
@@ -591,6 +592,7 @@ function CustomersPage({ user, users, customers, onSave, onChangeState }) {
         <CustomerModal
           customer={editing.custNo ? editing : null}
           error={error}
+          onClearError={() => setError('')}
           onClose={() => setEditing(null)}
           onSave={save}
         />
