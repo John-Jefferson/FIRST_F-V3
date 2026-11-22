@@ -6,6 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+// Pending Users receive these starter permissions only when approval leaves their rights empty.
 const DEFAULT_USER_PERMISSIONS = [
   'customers.view',
   'customers.add',
