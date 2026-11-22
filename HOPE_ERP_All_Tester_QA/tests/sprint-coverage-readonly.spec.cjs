@@ -9,7 +9,6 @@ const areas = [
   { label:'Product', nav:'Products', tabs:['Products','Price history'], heading:'Products', task:'S2-TST-02' },
   { label:'HR', nav:'Human resources', tabs:['Employees','Jobs','Departments','Job history'], heading:'Human resources', task:'S3-TST-01' },
   { label:'Sales', nav:'Sales', tabs:['Sales','Sale details'], heading:'Sales', task:'S4-TST-01' },
-  { label:'Payment', nav:'Payments', tabs:['Payments'], heading:'Payments', task:'S4-TST-02' },
   { label:'Reports', nav:'Reports', tabs:['Top Customers','Product Master List','Top Products','Active Employees','All Employees','Employee Job History','Top Sales'], heading:'Reports', task:'S4-TST-03' },
   { label:'Users', nav:'Users', tabs:[], heading:'Users', task:'S1-TST-03' },
 ];
