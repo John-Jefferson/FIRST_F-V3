@@ -39,6 +39,8 @@ body {
   background: var(--paper);
 }
 
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
 button, input { font: inherit; }
 button { color: inherit; }
 button:focus-visible, a:focus-visible, input:focus-visible {
