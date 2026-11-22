@@ -264,6 +264,38 @@ function Modal({ title, subtitle, onClose, children, wide = false }) {
     </div>
   );
 }
+function PasswordField({ id, label, value, onChange, autoComplete = 'new-password', minLength, helpText }) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div className="form-group">
+      <label htmlFor={id}>{label}</label>
+      <div className="password-input">
+        <input
+          id={id}
+          type={visible ? 'text' : 'password'}
+          minLength={minLength}
+          autoComplete={autoComplete}
+          value={value}
+          onChange={onChange}
+          required
+        />
+        <button
+          className="password-toggle"
+          type="button"
+          aria-controls={id}
+          aria-label={`${visible ? 'Hide' : 'Show'} ${label.toLowerCase()}`}
+          aria-pressed={visible}
+          onClick={() => setVisible((current) => !current)}
+        >
+          {visible ? 'Hide' : 'Show'}
+        </button>
+      </div>
+      {helpText && <small className="form-help">{helpText}</small>}
+    </div>
+  );
+}
+
 function RegisterModal({ onClose, onRegister }) {
   const [message, setMessage] = useState(null);
   const [email, setEmail] = useState('');
@@ -355,18 +387,13 @@ function RegisterModal({ onClose, onRegister }) {
           />
         </div>
 
-        <div className="form-group">
-          <label htmlFor="regPassword">Password</label>
-          <input
-            id="regPassword"
-            type="password"
-            minLength="8"
-            autoComplete="new-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </div>
+        <PasswordField
+          id="regPassword"
+          label="Password"
+          minLength="8"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+        />
 
         <button
           className="button button-primary button-full"
@@ -480,17 +507,13 @@ async function handleForgotPassword() {
           />
         </div>
 
-        <div className="form-group">
-          <label htmlFor="loginPassword">Password</label>
-          <input
-            id="loginPassword"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </div>
+        <PasswordField
+          id="loginPassword"
+          label="Password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+        />
 
         <button
           className="button button-primary button-full"
@@ -570,31 +593,21 @@ function ResetPasswordModal({ onUpdatePassword, onClose }) {
       <form className="modal-body" onSubmit={submit}>
         <Alert message={message} />
 
-        <div className="form-group">
-          <label htmlFor="newPassword">New Password</label>
-          <input
-            id="newPassword"
-            type="password"
-            autoComplete="new-password"
-            minLength="8"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </div>
+        <PasswordField
+          id="newPassword"
+          label="New Password"
+          minLength="8"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+        />
 
-        <div className="form-group">
-          <label htmlFor="confirmNewPassword">Confirm New Password</label>
-          <input
-            id="confirmNewPassword"
-            type="password"
-            autoComplete="new-password"
-            minLength="8"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            required
-          />
-        </div>
+        <PasswordField
+          id="confirmNewPassword"
+          label="Confirm New Password"
+          minLength="8"
+          value={confirmPassword}
+          onChange={(event) => setConfirmPassword(event.target.value)}
+        />
 
         <button
           className="button button-primary button-full"
@@ -1448,7 +1461,7 @@ function UserManagement({ user, users, onSave, onDelete, onStatus, onPermissions
           <div className="form-row"><div className="form-group"><label htmlFor="user-first">First name</label><input id="user-first" value={form.firstName} onChange={(event) => setForm({ ...form, firstName: event.target.value })} required /></div>
             <div className="form-group"><label htmlFor="user-last">Last name</label><input id="user-last" value={form.lastName} onChange={(event) => setForm({ ...form, lastName: event.target.value })} required /></div></div>
           <div className="form-group"><label htmlFor="user-email">Email</label><input id="user-email" type="email" value={form.email} readOnly={Boolean(editing)} onChange={(event) => setForm({ ...form, email: event.target.value })} required /></div>
-          {!editing && <div className="form-group"><label htmlFor="user-password">Temporary password</label><input id="user-password" type="password" minLength="8" autoComplete="new-password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required /><small className="form-help">At least 8 characters. Share it securely with the new user.</small></div>}
+          {!editing && <PasswordField id="user-password" label="Temporary password" minLength="8" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} helpText="At least 8 characters. Share it securely with the new user." />}
           {isSuper && <div className="form-group"><label htmlFor="user-role">Role</label><select id="user-role" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })}><option value="user">User</option><option value="admin">Admin</option><option value="superadmin">Superadmin</option></select></div>}
           <div className="modal-actions"><button type="button" className="button button-outline" onClick={() => setEditing(null)}>Cancel</button><button className="button button-primary" type="submit">Save account</button></div>
         </form>
