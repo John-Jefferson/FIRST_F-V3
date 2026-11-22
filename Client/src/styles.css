@@ -22,8 +22,11 @@
   --red: #691616;
   --red-wash: #fbefef;
   --radius: 12px;
+  --transition: 200ms ease-in-out;
   --shadow: 0 16px 48px rgba(31, 40, 34, 0.1);
 }
+
+a, .btn, .card { transition: all var(--transition); }
 
 * { box-sizing: border-box; }
 
