@@ -1004,7 +1004,7 @@ function RecordModal({ collection, record, data, customers, error, onClose, onSa
 
   async function submit(event) {
     event.preventDefault();
-    const result = await onSave(collection, form, record ? recordKey(record, collection) : null);
+    const result = await onSave(form);
     if (result.error) setMessage(result.error);
     else onClose();
   }
@@ -1076,9 +1076,9 @@ function RecordsPage({ section, user, users, data, customers, onSave, onChangeSt
     saleDetails: { add: 'sales.detailAdd', edit: 'sales.detailEdit', delete: 'sales.detailDelete' },
     payments: { add: 'payments.add', edit: 'payments.edit', delete: 'payments.delete' },
   }[collection];
-  const canAdd = isAdmin(user);
-  const canEdit = isAdmin(user);
-  const canDelete = isAdmin(user);
+  const canAdd = actionPermissions ? hasPermission(user, actionPermissions.add, users) : isAdmin(user);
+  const canEdit = actionPermissions ? hasPermission(user, actionPermissions.edit, users) : isAdmin(user);
+  const canDelete = actionPermissions ? hasPermission(user, actionPermissions.delete, users) : isAdmin(user);
   const records = data[collection] || [];
   const filtered = records.filter((record) => {
     if (!isAdmin(user) && record.isDeleted) return false;
@@ -1592,7 +1592,17 @@ return () => {
   }, [authUser]);
 
   async function saveRecord(collection, record, keyFields, editKey = null) {
-    if (!isAdmin(currentUser)) return { error: 'Only admins and superadmins can change ERP data.' };
+    const permissionMap = {
+  products: { add: 'products.add', edit: 'products.edit' },
+  prices: { add: 'products.priceAdd', edit: 'products.priceEdit' },
+};
+
+const action = editKey ? 'edit' : 'add';
+const permission = permissionMap[collection]?.[action];
+
+if (!permission || !hasPermission(currentUser, permission, users)) {
+  return { error: 'You do not have permission to perform this action.' };
+}
     const cleaned = Object.fromEntries(Object.entries(record).filter(([key]) => !['isDeleted', 'stamp'].includes(key)));
     let query = supabase.from(ERP_TABLES[collection].name);
     if (editKey) {
@@ -1639,17 +1649,42 @@ return () => {
   }
 
   async function changeRecordState(collection, key, isDeleted) {
-    if (!isAdmin(currentUser)) return setAppError('Only admins and superadmins can change ERP data.');
-    const config = collection === 'customers' ? { key: ['custNo'] } : COLLECTIONS[collection];
-    let query = supabase.from(ERP_TABLES[collection].name).update({ is_deleted: isDeleted });
-    key.split('|').forEach((value, index) => {
-      const field = config.key[index];
-      const databaseKey = Object.entries(DATABASE_FIELD_NAMES).find(([, appField]) => appField === field)?.[0] || field;
-      query = query.eq(databaseKey, value);
-    });
-    const { error } = await query;
-    if (error) return setAppError(`Could not update record: ${error.message}`);
-    await reloadWorkspace();
+    const permissionMap = {
+  products: 'products.delete',
+  prices: 'products.priceDelete',
+  customers: 'customers.delete',
+};
+
+const permission = permissionMap[collection];
+
+if (!permission || !hasPermission(currentUser, permission, users)) {
+  return setAppError('You do not have permission to perform this action.');
+}
+
+const config = collection === 'customers'
+  ? { key: ['custNo'] }
+  : COLLECTIONS[collection];
+
+let query = supabase
+  .from(ERP_TABLES[collection].name)
+  .update({ is_deleted: isDeleted });
+
+key.split('|').forEach((value, index) => {
+  const field = config.key[index];
+  const databaseKey =
+    Object.entries(DATABASE_FIELD_NAMES)
+      .find(([, appField]) => appField === field)?.[0] || field;
+
+  query = query.eq(databaseKey, value);
+});
+
+const { error } = await query;
+
+if (error) {
+  return setAppError(`Could not update record: ${error.message}`);
+}
+
+await reloadWorkspace();
   }
 
   async function saveUser(form, editEmail) {
