@@ -103,6 +103,7 @@ function toDatabaseRow(row, collection) {
   return Object.fromEntries(Object.entries(row).map(([key, value]) => [overrides[key] || databaseFields[key] || key, value]));
 }
 
+// Load the signed-in profile, account status, ERP rows, and managed users as one workspace snapshot.
 async function loadWorkspace(userId) {
   const { data: profileRow, error: profileError } = await supabase
     .from('app_profiles').select('*').eq('id', userId).single();
