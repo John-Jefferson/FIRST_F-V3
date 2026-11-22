@@ -13,6 +13,7 @@ const PERMISSIONS = [
   'reports.view', 'reports.topCustomers', 'reports.productMaster', 'reports.topProducts',
   'reports.activeEmployees', 'reports.allEmployees', 'reports.empJobHistory', 'reports.topSales',
 ];
+// A module action requires its matching view permission to be exposed in the UI.
 const PERMISSION_GROUP_VIEWS = {
   customers: 'customers.view',
   products: 'products.view',
