@@ -25,6 +25,13 @@ This document outlines the database security framework, access control policies,
   * Lets active users read, add, edit, or soft-delete records only when their profile has the matching permission.
   * Keeps admin and superadmin full access and continues to enforce these rules in PostgreSQL RLS.
 
+### 4. `20261122000000_controlled_permanent_deletion.sql`
+* **Purpose:** Keeps normal soft deletes independent of related history and adds a server-only transaction for confirmed permanent deletion.
+* **Key Mechanisms:**
+  * Removes the extra active-child soft-delete guard so parent records can be archived while history remains, matching HopeWeb.
+  * Keeps direct hard deletes blocked; only the service-role RPC can perform them after the Edge Function checks per-record delete permissions.
+  * Records each permanently removed key in `erp_permanent_delete_audit`. Linked legacy payment rows are not deletable through this flow and block deletion of their sale.
+
 ---
 
 ## Access Control Matrix
@@ -32,8 +39,8 @@ This document outlines the database security framework, access control policies,
 | Role | Read Access (`SELECT`) | Write Access (`INSERT`, `UPDATE`, `DELETE`) |
 | :--- | :--- | :--- |
 | **Anonymous / Public** | Blocked (`FALSE`) | Blocked (`FALSE`) |
-| **Active User** | Allowed only for assigned modules and reports | Allowed only for individually assigned actions; deletes are soft deletes |
-| **Administrator / Superadmin** | Allowed across ERP modules | Allowed across ERP modules; deletes are soft deletes |
+| **Active User** | Allowed only for assigned modules and reports | Allowed only for individually assigned actions; permanent deletion also requires permission for every selected related row |
+| **Administrator / Superadmin** | Allowed across ERP modules | Allowed across ERP modules; permanent deletion is performed through the server-only confirmed flow |
 
 ---
 

@@ -264,6 +264,112 @@ function Modal({ title, subtitle, onClose, children, wide = false }) {
     </div>
   );
 }
+
+function PermanentDeleteModal({ target, onClose, onPreview, onDelete }) {
+  const [impact, setImpact] = useState(null);
+  const [selected, setSelected] = useState([]);
+  const [busy, setBusy] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    onPreview(target.table, target.key).then((result) => {
+      if (!active) return;
+      if (result.error) setError(result.error);
+      else setImpact(result);
+      setBusy(false);
+    }).catch((requestError) => {
+      if (!active) return;
+      setError(requestError.message || 'Could not load the deletion impact.');
+      setBusy(false);
+    });
+    return () => { active = false; };
+  }, [onPreview, target]);
+
+  const ready = Boolean(impact)
+    && !impact.blockers.length
+    && impact.records.every((record) => record.canDelete && selected.includes(record.id));
+
+  async function confirmDelete() {
+    setSaving(true);
+    setError('');
+    try {
+      const result = await onDelete(target.table, target.key, selected);
+      if (result.error) setError(result.error);
+      else onClose();
+    } catch (requestError) {
+      setError(requestError.message || 'Could not permanently delete these records.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal title={`Permanently delete ${target.label}?`} subtitle="This cannot be undone. Review every related record before confirming." onClose={onClose} wide>
+      <div className="modal-body permanent-delete-body">
+        <Alert message={error ? { type: 'error', text: error } : null} />
+        {busy ? <p role="status">Checking related records…</p> : impact && (
+          <>
+            <p className="delete-impact-summary">
+              The selected record and every checked related record will be permanently removed.
+              Database relationships require every listed row to be selected before the main record can be removed.
+              Payments are retained and prevent deletion of a linked sale.
+            </p>
+            {impact.blockers.map((blocker) => (
+              <Alert key={blocker.table} message={{ type: 'error', text: `${blocker.count} ${blocker.table} record(s): ${blocker.message}` }} />
+            ))}
+            {impact.records.length > 0 && (
+              <>
+                <div className="delete-impact-actions">
+                  <strong>{impact.records.length} related record(s)</strong>
+                  <button
+                    className="text-button"
+                    type="button"
+                    onClick={() => setSelected(impact.records.filter((record) => record.canDelete).map((record) => record.id))}
+                  >
+                    Select all permitted
+                  </button>
+                </div>
+                <ul className="delete-impact-list">
+                  {impact.records.map((record) => (
+                    <li key={record.id}>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={selected.includes(record.id)}
+                          disabled={!record.canDelete || saving}
+                          onChange={(event) => setSelected((current) => event.target.checked
+                            ? [...current, record.id]
+                            : current.filter((id) => id !== record.id))}
+                        />
+                        <span>
+                          <strong>{record.label}</strong>
+                          <small>{record.table} · {record.isDeleted ? 'already inactive' : 'active'}
+                            {!record.canDelete && ` · requires ${record.permission}`}
+                          </small>
+                        </span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {!impact.records.length && !impact.blockers.length && <p>No related records were found.</p>}
+            <div className="modal-actions">
+              <button className="button button-outline" type="button" onClick={onClose} disabled={saving}>Cancel</button>
+              <button className="button button-danger" type="button" onClick={confirmDelete} disabled={!ready || saving}>
+                {saving ? 'Deleting…' : `Permanently delete ${impact.records.length + 1} record(s)`}
+              </button>
+            </div>
+          </>
+        )}
+        {!busy && !impact && <div className="modal-actions"><button className="button button-outline" type="button" onClick={onClose}>Close</button></div>}
+      </div>
+    </Modal>
+  );
+}
+
 function RegisterModal({ onClose, onRegister }) {
   const [message, setMessage] = useState(null);
   const [email, setEmail] = useState('');
@@ -789,7 +895,7 @@ function Overview({ user, users, data, onNavigate }) {
   );
 }
 
-function CustomersPage({ user, users, customers, onSave, onChangeState }) {
+function CustomersPage({ user, users, customers, onSave, onChangeState, onDeletePreview, onPermanentDelete }) {
   const admin = isAdmin(user);
   const canAdd = hasPermission(user, 'customers.add', users);
   const canEdit = hasPermission(user, 'customers.edit', users);
@@ -797,6 +903,7 @@ function CustomersPage({ user, users, customers, onSave, onChangeState }) {
   const [filter, setFilter] = useState('active');
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState(null);
+  const [deleting, setDeleting] = useState(null);
   const [error, setError] = useState('');
 
   const filteredCustomers = useMemo(() => {
@@ -915,6 +1022,15 @@ function CustomersPage({ user, users, customers, onSave, onChangeState }) {
                           Delete
                         </button>
                       )}
+                      {canDelete && (
+                        <button className="table-action table-action-danger" onClick={() => setDeleting({
+                          table: 'customer',
+                          key: { custno: customer.custNo },
+                          label: customer.custName || customer.custNo,
+                        })}>
+                          Delete permanently
+                        </button>
+                      )}
                     </div>
                   </td>
                 )}
@@ -935,6 +1051,7 @@ function CustomersPage({ user, users, customers, onSave, onChangeState }) {
           onSave={save}
         />
       )}
+      {deleting && <PermanentDeleteModal target={deleting} onClose={() => setDeleting(null)} onPreview={onDeletePreview} onDelete={onPermanentDelete} />}
     </section>
   );
 }
@@ -1008,6 +1125,13 @@ function recordKey(record, collection) {
   return COLLECTIONS[collection].key.map((key) => record[key]).join('|');
 }
 
+function recordDatabaseKey(record, collection) {
+  return Object.fromEntries(ERP_TABLES[collection].keys.map((field) => [
+    field,
+    record[DATABASE_FIELD_NAMES[field] || field],
+  ]));
+}
+
 function RecordModal({ collection, record, data, customers, error, onClose, onSave }) {
   const config = COLLECTIONS[collection];
   const [form, setForm] = useState(() => Object.fromEntries(
@@ -1072,11 +1196,12 @@ function RecordModal({ collection, record, data, customers, error, onClose, onSa
   );
 }
 
-function RecordsPage({ section, user, users, data, customers, onSave, onChangeState }) {
+function RecordsPage({ section, user, users, data, customers, onSave, onChangeState, onDeletePreview, onPermanentDelete }) {
   const [collection, setCollection] = useState(SECTION_TABS[section][0]);
   const [filter, setFilter] = useState('active');
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState(null);
+  const [deleting, setDeleting] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [error, setError] = useState('');
   const config = COLLECTIONS[collection];
@@ -1143,6 +1268,11 @@ function RecordsPage({ section, user, users, data, customers, onSave, onChangeSt
                   {record.isDeleted ? isAdmin(user) && <button className="table-action" onClick={() => onChangeState(collection, recordKey(record, collection), false)}>Restore</button>
                     : canEdit && <button className="table-action" onClick={() => { setEditing(record); setModalOpen(true); setError(''); }}>Edit</button>}
                   {!record.isDeleted && canDelete && <button className="table-action table-action-danger" onClick={() => window.confirm(`Mark this ${config.singular} inactive?`) && onChangeState(collection, recordKey(record, collection), true)}>Delete</button>}
+                  {canDelete && <button className="table-action table-action-danger" onClick={() => setDeleting({
+                    table: ERP_TABLES[collection].name,
+                    key: recordDatabaseKey(record, collection),
+                    label: `${config.singular} ${recordKey(record, collection)}`,
+                  })}>Delete permanently</button>}
                 </div></td>}
               </tr>
             ))}
@@ -1151,6 +1281,7 @@ function RecordsPage({ section, user, users, data, customers, onSave, onChangeSt
         </table></div>
       </section>
       {modalOpen && <RecordModal collection={collection} record={editing} data={data} customers={customers} error={error} onClose={() => { setEditing(null); setModalOpen(false); }} onSave={save} />}
+      {deleting && <PermanentDeleteModal target={deleting} onClose={() => setDeleting(null)} onPreview={onDeletePreview} onDelete={onPermanentDelete} />}
     </>
   );
 }
@@ -1467,7 +1598,7 @@ function UserManagement({ user, users, onSave, onDelete, onStatus, onPermissions
   );
 }
 
-function Dashboard({ user, users, customers, data, dataError, dataLoading, onReloadData, appError, clearError, onLogout, onCustomerSave, onCustomerState, onRecordSave, onRecordState, onUserSave, onUserDelete, onUserStatus, onUserPermissions }) {
+function Dashboard({ user, users, customers, data, dataError, dataLoading, onReloadData, appError, clearError, onLogout, onCustomerSave, onCustomerState, onRecordSave, onRecordState, onUserSave, onUserDelete, onUserStatus, onUserPermissions, onDeletePreview, onPermanentDelete }) {
   const [activePage, setActivePage] = useState('dashboard');
   const visibleModules = MODULES.filter((module) => {
     if (module.adminOnly) return isAdmin(user);
@@ -1505,8 +1636,8 @@ function Dashboard({ user, users, customers, data, dataError, dataLoading, onRel
         {dataError && <div className="app-notice"><Alert message={{ type: 'error', text: dataError }} /></div>}
         {appError && <div className="app-notice"><Alert message={{ type: 'error', text: appError }} /><button className="icon-button" onClick={clearError} aria-label="Dismiss error">×</button></div>}
         {currentPage.id === 'dashboard' && <Overview user={user} users={users} data={data} onNavigate={setActivePage} />}
-        {currentPage.id === 'customers' && <CustomersPage user={user} users={users} customers={customers} onSave={onCustomerSave} onChangeState={onCustomerState} />}
-        {['products', 'hr', 'sales'].includes(currentPage.id) && <RecordsPage key={currentPage.id} section={currentPage.id} user={user} users={users} data={data} customers={customers} onSave={onRecordSave} onChangeState={onRecordState} />}
+        {currentPage.id === 'customers' && <CustomersPage user={user} users={users} customers={customers} onSave={onCustomerSave} onChangeState={onCustomerState} onDeletePreview={onDeletePreview} onPermanentDelete={onPermanentDelete} />}
+        {['products', 'hr', 'sales'].includes(currentPage.id) && <RecordsPage key={currentPage.id} section={currentPage.id} user={user} users={users} data={data} customers={customers} onSave={onRecordSave} onChangeState={onRecordState} onDeletePreview={onDeletePreview} onPermanentDelete={onPermanentDelete} />}
         {currentPage.id === 'reports' && <ReportsPage user={user} users={users} data={data} customers={customers} />}
         {currentPage.id === 'users' && <UserManagement user={user} users={users} onSave={onUserSave} onDelete={onUserDelete} onStatus={onUserStatus} onPermissions={onUserPermissions} />}
         {currentPage.id === 'audit' && <AuditLogPage />}
@@ -1679,6 +1810,31 @@ return () => {
     await reloadWorkspace();
   }
 
+  async function invokePermanentDelete(body) {
+    const { data: result, error } = await supabase.functions.invoke('permanently-delete', { body });
+    if (!error) {
+      return result && typeof result === 'object'
+        ? result
+        : { error: 'The permanent-delete service returned an empty response.' };
+    }
+    if (error.context && typeof error.context.json === 'function') {
+      const response = await error.context.json().catch(() => null);
+      if (response && typeof response.error === 'string') return { error: response.error };
+    }
+    return { error: error.message };
+  }
+
+  async function previewPermanentDelete(table, key) {
+    return invokePermanentDelete({ action: 'preview', table, key });
+  }
+
+  async function permanentlyDelete(table, key, selectedIds) {
+    const result = await invokePermanentDelete({ action: 'delete', table, key, selectedIds });
+    if (result.error) return result;
+    await reloadWorkspace();
+    return {};
+  }
+
   async function saveUser(form, editEmail) {
   if (!isAdmin(currentUser)) {
     return { error: 'Only administrators can manage accounts.' };
@@ -1837,6 +1993,8 @@ return () => {
         onUserDelete={deleteUser}
         onUserStatus={changeUserStatus}
         onUserPermissions={changeUserPermissions}
+        onDeletePreview={previewPermanentDelete}
+        onPermanentDelete={permanentlyDelete}
       />
     ) : loading || (authUser && !currentUser && !dataError) ? (
       <div className="storage-warning" role="status">
