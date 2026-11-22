@@ -21,3 +21,16 @@ The source inspection identified potential specification gaps in per-action writ
 Run `node scripts/check_readiness.cjs` (requires this QA folder alongside `Client/` or `HOPE_CLIENT_PATH`) and `python scripts/validate_coverage.py` before the Playwright suite. `OK` means a local file/preflight condition is satisfied; `REVIEW` does **not** mean business logic passed. See `PR_DESCRIPTION.md` for a ready-to-paste PR description.
 
 For a QA-only PR, copy the complete `HOPE_ERP_All_Tester_QA` folder into the **root** of your repository on `feature/Test`. Stage this folder alone. Inspect the staged filename list before committing. Do not upload previous generated report folders or secret configuration files.
+
+### Environment matrix
+
+| Variable | Purpose |
+|---|---|
+| `ERP_BASE_URL` | ERP base URL used by Playwright |
+| `QA_TEST_TIMEOUT_MS` | Optional test timeout override |
+| `QA_EXPECT_TIMEOUT_MS` | Optional assertion timeout override |
+| `QA_USER_*` | Authorized User test account |
+| `QA_ADMIN_*` | Authorized Admin test account |
+| `QA_SUPERADMIN_*` | Authorized Superadmin test account |
+
+Never commit credential values or generated private reports.
