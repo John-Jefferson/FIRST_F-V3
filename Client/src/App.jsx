@@ -48,6 +48,7 @@ const WRITE_PERMISSIONS = {
   sales: { add: 'sales.add', edit: 'sales.edit', delete: 'sales.delete' },
   saleDetails: { add: 'sales.detailAdd', edit: 'sales.detailEdit', delete: 'sales.detailDelete' },
 };
+// Database columns use snake case; this map translates them to the app's camel-case names.
 const DATABASE_FIELD_NAMES = {
   empno: 'empNo', lastname: 'lastName', firstname: 'firstName', birthdate: 'birthDate',
   hiredate: 'hireDate', sepdate: 'sepDate', deptcode: 'deptCode', jobcode: 'jobCode',
