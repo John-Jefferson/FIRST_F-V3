@@ -307,6 +307,17 @@ function RegisterModal({ onClose, onRegister }) {
   async function submit(event) {
     event.preventDefault();
     setMessage(null);
+
+    if (!email.trim()) {
+      setMessage({ type: 'error', text: 'EMAIL IS REQUIRED' });
+      return;
+    }
+
+    if (!event.currentTarget.checkValidity()) {
+      event.currentTarget.reportValidity();
+      return;
+    }
+
     setBusy(true);
 
     try {
@@ -346,7 +357,7 @@ function RegisterModal({ onClose, onRegister }) {
       subtitle="Create your Hope, Inc. ERP account"
       onClose={onClose}
     >
-      <form className="modal-body" onSubmit={submit}>
+      <form className="modal-body" onSubmit={submit} noValidate>
         <Alert message={message} />
 
         <div className="role-note">
@@ -417,6 +428,17 @@ function LoginModal({ onClose, onSignIn, onRequestReset }) {
   async function submit(event) {
     event.preventDefault();
     setMessage(null);
+
+    if (!email.trim()) {
+      setMessage({ type: 'error', text: 'EMAIL IS REQUIRED' });
+      return;
+    }
+
+    if (!event.currentTarget.checkValidity()) {
+      event.currentTarget.reportValidity();
+      return;
+    }
+
     setBusy(true);
 
     try {
@@ -474,7 +496,7 @@ async function handleForgotPassword() {
       subtitle="Sign in to your account"
       onClose={onClose}
     >
-      <form className="modal-body" onSubmit={submit}>
+      <form className="modal-body" onSubmit={submit} noValidate>
         <Alert message={message} />
 
         <div className="role-note">
