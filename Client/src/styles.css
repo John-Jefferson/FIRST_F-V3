@@ -92,6 +92,9 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .button:hover { transform: translateY(-1px); }
 .button-primary { background: var(--accent); color: white; }
 .button-primary:hover { background: var(--accent-hover); }
+.button-danger { background: #8b2424; color: white; }
+.button-danger:hover { background: #6f1c1c; }
+.button:disabled { cursor: not-allowed; opacity: 0.55; transform: none; }
 .button-outline { border-color: var(--line); background: white; color: var(--ink); }
 .button-outline:hover, .button-ghost:hover { border-color: #d3d7d1; background: var(--wash); }
 .button-ghost { background: transparent; color: var(--ink); }
@@ -336,6 +339,14 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .form-footer > .text-button { align-self: center; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
 .modal-actions .button { min-height: 40px; font-size: 12px; }
+.delete-impact-summary { margin: 0 0 12px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.delete-impact-actions { display: flex; justify-content: space-between; gap: 10px; margin: 14px 0 8px; font-size: 12px; }
+.delete-impact-list { max-height: 300px; overflow-y: auto; margin: 0; padding: 0; list-style: none; }
+.delete-impact-list li { border-top: 1px solid var(--line); padding: 9px 0; }
+.delete-impact-list label { display: flex; align-items: flex-start; gap: 9px; cursor: pointer; }
+.delete-impact-list input { margin-top: 3px; }
+.delete-impact-list span { display: flex; flex-direction: column; gap: 3px; }
+.delete-impact-list small { color: var(--muted); font-size: 10px; }
 .app-notice { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 14px; }
 .app-notice .alert { flex: 1; margin: 0; }
 .connection-error { position: fixed; z-index: 30; right: 16px; bottom: 16px; left: 16px; display: flex; width: min(100% - 32px, 620px); align-items: center; gap: 12px; margin: auto; border: 1px solid #f1d8d8; border-radius: 9px; background: white; padding: 12px 14px; box-shadow: var(--shadow); }

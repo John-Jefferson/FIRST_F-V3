@@ -802,7 +802,7 @@ function Overview({ user, users, data, onNavigate }) {
   );
 }
 
-function CustomersPage({ user, users, customers, onSave, onChangeState }) {
+function CustomersPage({ user, users, customers, onSave, onChangeState, onDeletePreview, onPermanentDelete }) {
   const admin = isAdmin(user);
   const canAdd = hasPermission(user, 'customers.add', users);
   const canEdit = hasPermission(user, 'customers.edit', users);
@@ -810,6 +810,7 @@ function CustomersPage({ user, users, customers, onSave, onChangeState }) {
   const [filter, setFilter] = useState('active');
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState(null);
+  const [deleting, setDeleting] = useState(null);
   const [error, setError] = useState('');
 
   const filteredCustomers = useMemo(() => {
@@ -928,6 +929,15 @@ function CustomersPage({ user, users, customers, onSave, onChangeState }) {
                           Delete
                         </button>
                       )}
+                      {canDelete && (
+                        <button className="table-action table-action-danger" onClick={() => setDeleting({
+                          table: 'customer',
+                          key: { custno: customer.custNo },
+                          label: customer.custName || customer.custNo,
+                        })}>
+                          Delete permanently
+                        </button>
+                      )}
                     </div>
                   </td>
                 )}
@@ -948,6 +958,7 @@ function CustomersPage({ user, users, customers, onSave, onChangeState }) {
           onSave={save}
         />
       )}
+      {deleting && <PermanentDeleteModal target={deleting} onClose={() => setDeleting(null)} onPreview={onDeletePreview} onDelete={onPermanentDelete} />}
     </section>
   );
 }
@@ -1021,6 +1032,13 @@ function recordKey(record, collection) {
   return COLLECTIONS[collection].key.map((key) => record[key]).join('|');
 }
 
+function recordDatabaseKey(record, collection) {
+  return Object.fromEntries(ERP_TABLES[collection].keys.map((field) => [
+    field,
+    record[DATABASE_FIELD_NAMES[field] || field],
+  ]));
+}
+
 function RecordModal({ collection, record, data, customers, error, onClose, onSave }) {
   const config = COLLECTIONS[collection];
   const [form, setForm] = useState(() => Object.fromEntries(
@@ -1085,11 +1103,12 @@ function RecordModal({ collection, record, data, customers, error, onClose, onSa
   );
 }
 
-function RecordsPage({ section, user, users, data, customers, onSave, onChangeState }) {
+function RecordsPage({ section, user, users, data, customers, onSave, onChangeState, onDeletePreview, onPermanentDelete }) {
   const [collection, setCollection] = useState(SECTION_TABS[section][0]);
   const [filter, setFilter] = useState('active');
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState(null);
+  const [deleting, setDeleting] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [error, setError] = useState('');
   const config = COLLECTIONS[collection];
@@ -1156,6 +1175,11 @@ function RecordsPage({ section, user, users, data, customers, onSave, onChangeSt
                   {record.isDeleted ? isAdmin(user) && <button className="table-action" onClick={() => onChangeState(collection, recordKey(record, collection), false)}>Restore</button>
                     : canEdit && <button className="table-action" onClick={() => { setEditing(record); setModalOpen(true); setError(''); }}>Edit</button>}
                   {!record.isDeleted && canDelete && <button className="table-action table-action-danger" onClick={() => window.confirm(`Mark this ${config.singular} inactive?`) && onChangeState(collection, recordKey(record, collection), true)}>Delete</button>}
+                  {canDelete && <button className="table-action table-action-danger" onClick={() => setDeleting({
+                    table: ERP_TABLES[collection].name,
+                    key: recordDatabaseKey(record, collection),
+                    label: `${config.singular} ${recordKey(record, collection)}`,
+                  })}>Delete permanently</button>}
                 </div></td>}
               </tr>
             ))}
@@ -1164,6 +1188,7 @@ function RecordsPage({ section, user, users, data, customers, onSave, onChangeSt
         </table></div>
       </section>
       {modalOpen && <RecordModal collection={collection} record={editing} data={data} customers={customers} error={error} onClose={() => { setEditing(null); setModalOpen(false); }} onSave={save} />}
+      {deleting && <PermanentDeleteModal target={deleting} onClose={() => setDeleting(null)} onPreview={onDeletePreview} onDelete={onPermanentDelete} />}
     </>
   );
 }
@@ -1480,7 +1505,7 @@ function UserManagement({ user, users, onSave, onDelete, onStatus, onPermissions
   );
 }
 
-function Dashboard({ user, users, customers, data, dataError, dataLoading, onReloadData, appError, clearError, onLogout, onCustomerSave, onCustomerState, onRecordSave, onRecordState, onUserSave, onUserDelete, onUserStatus, onUserPermissions }) {
+function Dashboard({ user, users, customers, data, dataError, dataLoading, onReloadData, appError, clearError, onLogout, onCustomerSave, onCustomerState, onRecordSave, onRecordState, onUserSave, onUserDelete, onUserStatus, onUserPermissions, onDeletePreview, onPermanentDelete }) {
   const [activePage, setActivePage] = useState('dashboard');
   const visibleModules = MODULES.filter((module) => {
     if (module.adminOnly) return isAdmin(user);
@@ -1518,8 +1543,8 @@ function Dashboard({ user, users, customers, data, dataError, dataLoading, onRel
         {dataError && <div className="app-notice"><Alert message={{ type: 'error', text: dataError }} /></div>}
         {appError && <div className="app-notice"><Alert message={{ type: 'error', text: appError }} /><button className="icon-button" onClick={clearError} aria-label="Dismiss error">×</button></div>}
         {currentPage.id === 'dashboard' && <Overview user={user} users={users} data={data} onNavigate={setActivePage} />}
-        {currentPage.id === 'customers' && <CustomersPage user={user} users={users} customers={customers} onSave={onCustomerSave} onChangeState={onCustomerState} />}
-        {['products', 'hr', 'sales'].includes(currentPage.id) && <RecordsPage key={currentPage.id} section={currentPage.id} user={user} users={users} data={data} customers={customers} onSave={onRecordSave} onChangeState={onRecordState} />}
+        {currentPage.id === 'customers' && <CustomersPage user={user} users={users} customers={customers} onSave={onCustomerSave} onChangeState={onCustomerState} onDeletePreview={onDeletePreview} onPermanentDelete={onPermanentDelete} />}
+        {['products', 'hr', 'sales'].includes(currentPage.id) && <RecordsPage key={currentPage.id} section={currentPage.id} user={user} users={users} data={data} customers={customers} onSave={onRecordSave} onChangeState={onRecordState} onDeletePreview={onDeletePreview} onPermanentDelete={onPermanentDelete} />}
         {currentPage.id === 'reports' && <ReportsPage user={user} users={users} data={data} customers={customers} />}
         {currentPage.id === 'users' && <UserManagement user={user} users={users} onSave={onUserSave} onDelete={onUserDelete} onStatus={onUserStatus} onPermissions={onUserPermissions} />}
         {currentPage.id === 'audit' && <AuditLogPage />}
@@ -1692,6 +1717,31 @@ return () => {
     await reloadWorkspace();
   }
 
+  async function invokePermanentDelete(body) {
+    const { data: result, error } = await supabase.functions.invoke('permanently-delete', { body });
+    if (!error) {
+      return result && typeof result === 'object'
+        ? result
+        : { error: 'The permanent-delete service returned an empty response.' };
+    }
+    if (error.context && typeof error.context.json === 'function') {
+      const response = await error.context.json().catch(() => null);
+      if (response && typeof response.error === 'string') return { error: response.error };
+    }
+    return { error: error.message };
+  }
+
+  async function previewPermanentDelete(table, key) {
+    return invokePermanentDelete({ action: 'preview', table, key });
+  }
+
+  async function permanentlyDelete(table, key, selectedIds) {
+    const result = await invokePermanentDelete({ action: 'delete', table, key, selectedIds });
+    if (result.error) return result;
+    await reloadWorkspace();
+    return {};
+  }
+
   async function saveUser(form, editEmail) {
   if (!isAdmin(currentUser)) {
     return { error: 'Only administrators can manage accounts.' };
@@ -1850,6 +1900,8 @@ return () => {
         onUserDelete={deleteUser}
         onUserStatus={changeUserStatus}
         onUserPermissions={changeUserPermissions}
+        onDeletePreview={previewPermanentDelete}
+        onPermanentDelete={permanentlyDelete}
       />
     ) : loading || (authUser && !currentUser && !dataError) ? (
       <div className="storage-warning" role="status">

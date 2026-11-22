@@ -19,4 +19,6 @@ Write actions in `Client/src/App.jsx` are gated by `ERP_WRITE_PERMISSIONS`:
 - **Customers:** `customers.add`, `customers.edit`, `customers.delete`
 - **Products & Pricing:** `products.add`, `products.edit`, `products.delete`, `products.priceAdd`, `products.priceEdit`, `products.priceDelete`
 - **HR & Organization:** `hr.empAdd`, `hr.empEdit`, `hr.empDelete`, `hr.jobAdd`, `hr.jobEdit`, `hr.jobDelete`, `hr.deptAdd`, `hr.deptEdit`, `hr.deptDelete`, `hr.jhAdd`, `hr.jhEdit`, `hr.jhDelete`
-- **Sales & Payments:** `sales.add`, `sales.edit`, `sales.delete`, `sales.detailAdd`, `sales.detailEdit`, `sales.detailDelete`, `payments.add`, `payments.edit`, `payments.delete`
+- **Sales:** `sales.add`, `sales.edit`, `sales.delete`, `sales.detailAdd`, `sales.detailEdit`, `sales.detailDelete`
+
+Permanent deletion uses these same delete rights, but also requires the matching delete permission for every selected related record. Legacy payment records have no delete permission in the app and block permanent deletion of their linked sale.
