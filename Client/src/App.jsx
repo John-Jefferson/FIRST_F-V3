@@ -649,6 +649,7 @@ function ResetPasswordModal({ onUpdatePassword, onClose }) {
   );
 }
 function CustomerModal({ customer, error, onClose, onSave }) {
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     custNo: customer?.custNo || '',
     custName: customer?.custName || '',
@@ -660,18 +661,25 @@ function CustomerModal({ customer, error, onClose, onSave }) {
     setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
   }
 
-  async function submit(event) {
+   async function submit(event) {
     event.preventDefault();
 
-    const cleaned = Object.fromEntries(
-      Object.entries(form).map(([key, value]) => [key, value.trim()])
-    );
+    if (saving) return;
+    setSaving(true);
 
-    if (Object.values(cleaned).some((value) => !value)) {
-      return;
+    try {
+      const cleaned = Object.fromEntries(
+        Object.entries(form).map(([key, value]) => [key, value.trim()])
+      );
+
+      if (Object.values(cleaned).some((value) => !value)) {
+        return;
+      }
+
+      await onSave(cleaned);
+    } finally {
+      setSaving(false);
     }
-
-    await onSave(cleaned);
   }
 
   return (
@@ -700,7 +708,9 @@ function CustomerModal({ customer, error, onClose, onSave }) {
         </div>
         <div className="modal-actions">
           <button className="button button-outline" type="button" onClick={onClose}>Cancel</button>
-          <button className="button button-primary" type="submit">{customer ? 'Update customer' : 'Save customer'}</button>
+          <button className="button button-primary" type="submit" disabled={saving}>
+            {saving ? 'Saving...' : customer ? 'Update customer' : 'Save customer'}
+          </button>
         </div>
       </form>
     </Modal>
