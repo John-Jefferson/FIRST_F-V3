@@ -2,8 +2,8 @@ const { defineConfig, devices } = require('@playwright/test');
 module.exports = defineConfig({
   testDir: './tests',
   testMatch: '**/*.spec.cjs',
-  timeout: 60000,
-  expect: { timeout: 15000 },
+  timeout: Number(process.env.QA_TEST_TIMEOUT_MS) || 60000,
+  expect: { timeout: Number(process.env.QA_EXPECT_TIMEOUT_MS) || 15000 },
   retries: 0,
   workers: 1,
   reporter: [
