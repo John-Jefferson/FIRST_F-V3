@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { supabase, supabaseConfigured } from './supabase.js';
 
 const PERMISSIONS = [
@@ -240,6 +240,7 @@ function Alert({ message }) {
 }
 
 function Modal({ title, subtitle, onClose, children, wide = false }) {
+  const titleId = useId();
   useEffect(() => {
     function onKeyDown(event) {
       if (event.key === 'Escape') onClose();
@@ -256,10 +257,10 @@ function Modal({ title, subtitle, onClose, children, wide = false }) {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <section className={`modal${wide ? ' modal-wide' : ''}`} role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <section className={`modal${wide ? ' modal-wide' : ''}`} role="dialog" aria-modal="true" aria-labelledby={titleId}>
         <header className="modal-header">
           <div>
-            <h2 id="modal-title">{title}</h2>
+            <h2 id={titleId}>{title}</h2>
             <p>{subtitle}</p>
           </div>
           <button className="icon-button" type="button" onClick={onClose} aria-label="Close dialog">×</button>
