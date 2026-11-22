@@ -170,7 +170,7 @@ function Modal({ title, subtitle, onClose, children, wide = false }) {
   );
 }
 
-function CustomerModal({ customer, error, onClose, onSave }) {
+function CustomerModal({ customer, error, onClose, onSave, onClearError }) {
   const [form, setForm] = useState({
     custNo: customer?.custNo || '',
     custName: customer?.custName || '',
@@ -179,12 +179,19 @@ function CustomerModal({ customer, error, onClose, onSave }) {
   });
 
   function update(event) {
+    onClearError();
     setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
   }
 
-  async function submit(event) {
+   async function submit(event) {
     event.preventDefault();
-    await onSave(form);
+    if (saving) return;
+    setSaving(true);
+    try {
+      await onSave(form);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -213,7 +220,9 @@ function CustomerModal({ customer, error, onClose, onSave }) {
         </div>
         <div className="modal-actions">
           <button className="button button-outline" type="button" onClick={onClose}>Cancel</button>
-          <button className="button button-primary" type="submit">{customer ? 'Update customer' : 'Save customer'}</button>
+          <button className="button button-primary" type="submit" disabled={saving}>
+            {saving ? 'Saving...' : customer ? 'Update customer' : 'Save customer'}
+          </button>
         </div>
       </form>
     </Modal>
@@ -591,6 +600,7 @@ function CustomersPage({ user, users, customers, onSave, onChangeState }) {
         <CustomerModal
           customer={editing.custNo ? editing : null}
           error={error}
+          onClearError={() => setError('')}
           onClose={() => setEditing(null)}
           onSave={save}
         />
@@ -692,9 +702,15 @@ function RecordModal({ collection, record, data, customers, error, onClose, onSa
 
   async function submit(event) {
     event.preventDefault();
-    const result = await onSave(collection, form, record ? recordKey(record, collection) : null);
-    if (result.error) setMessage(result.error);
-    else onClose();
+    if (saving) return;
+    setSaving(true);
+    try {
+      const result = await onSave(collection, form, record ? recordKey(record, collection) : null);
+      if (result.error) setMessage(result.error);
+      else onClose();
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -738,7 +754,9 @@ function RecordModal({ collection, record, data, customers, error, onClose, onSa
         </div>
         <div className="modal-actions">
           <button className="button button-outline" type="button" onClick={onClose}>Cancel</button>
-          <button className="button button-primary" type="submit">{record ? 'Save changes' : 'Add record'}</button>
+          <button className="button button-primary" type="submit" disabled={saving}>
+              {saving ? 'Saving...' : record ? 'Save changes' : 'Add record'}
+            </button>
         </div>
       </form>
     </Modal>
