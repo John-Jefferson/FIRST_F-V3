@@ -60,6 +60,7 @@ function fromDatabaseRow(row) {
 async function fetchAllRows(table) {
   const rows = [];
   const pageSize = 1000;
+  // Supabase caps result sizes, so fetch every page in stable primary-key order.
   for (let offset = 0; ; offset += pageSize) {
     let query = supabase.from(table.name).select('*');
     for (const key of table.keys) query = query.order(key, { ascending: true });
