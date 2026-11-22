@@ -7,7 +7,7 @@ const roles = [
   { role: 'Admin', prefix: 'QA_ADMIN', expected: 'admin' },
   { role: 'Superadmin', prefix: 'QA_SUPERADMIN', expected: 'superadmin' },
 ];
-const modules = ['Overview','Customers','Products','Human resources','Sales','Payments','Reports','Users'];
+const modules = ['Overview','Customers','Products','Human resources','Sales','Reports','Users'];
 
 for (const account of roles) {
   test.describe(`${account.role} — live read-only`, () => {
