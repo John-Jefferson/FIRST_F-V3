@@ -20,3 +20,5 @@ Write actions in `Client/src/App.jsx` are gated by `ERP_WRITE_PERMISSIONS`:
 - **Products & Pricing:** `products.add`, `products.edit`, `products.delete`, `products.priceAdd`, `products.priceEdit`, `products.priceDelete`
 - **HR & Organization:** `hr.empAdd`, `hr.empEdit`, `hr.empDelete`, `hr.jobAdd`, `hr.jobEdit`, `hr.jobDelete`, `hr.deptAdd`, `hr.deptEdit`, `hr.deptDelete`, `hr.jhAdd`, `hr.jhEdit`, `hr.jhDelete`
 - **Sales:** `sales.add`, `sales.edit`, `sales.delete`, `sales.detailAdd`, `sales.detailEdit`, `sales.detailDelete`
+
+Permanent deletion uses the delete permission for the selected record. That permission also authorizes deleting all related records shown in the confirmation dialog, including payments linked to sales, which must all be selected.

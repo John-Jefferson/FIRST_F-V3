@@ -1,0 +1,24 @@
+name: QA task
+description: Request a focused QA check or evidence update
+title: "[QA] "
+labels: ["qa"]
+body:
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Describe the test case or evidence gap.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Staging environment
+      description: Record the URL or environment name without credentials.
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety
+      options:
+        - label: No production data or credentials will be included.
+          required: true

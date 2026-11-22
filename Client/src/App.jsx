@@ -13,6 +13,7 @@ const PERMISSIONS = [
   'reports.view', 'reports.topCustomers', 'reports.productMaster', 'reports.topProducts',
   'reports.activeEmployees', 'reports.allEmployees', 'reports.empJobHistory', 'reports.topSales',
 ];
+// A module action requires its matching view permission to be exposed in the UI.
 const PERMISSION_GROUP_VIEWS = {
   customers: 'customers.view',
   products: 'products.view',
@@ -24,6 +25,7 @@ const EMPTY_DATA = {
   customers: [], products: [], prices: [], employees: [], jobs: [], departments: [],
   jobHistory: [], sales: [], saleDetails: [],
 };
+// ERP_TABLES is also the list of stable primary-keyed collections loaded into the workspace.
 const ERP_TABLES = {
   customers: { name: 'customer', keys: ['custno'] },
   products: { name: 'product', keys: ['prodcode'] },
@@ -46,6 +48,7 @@ const WRITE_PERMISSIONS = {
   sales: { add: 'sales.add', edit: 'sales.edit', delete: 'sales.delete' },
   saleDetails: { add: 'sales.detailAdd', edit: 'sales.detailEdit', delete: 'sales.detailDelete' },
 };
+// Database columns use snake case; this map translates them to the app's camel-case names.
 const DATABASE_FIELD_NAMES = {
   empno: 'empNo', lastname: 'lastName', firstname: 'firstName', birthdate: 'birthDate',
   hiredate: 'hireDate', sepdate: 'sepDate', deptcode: 'deptCode', jobcode: 'jobCode',
@@ -60,6 +63,7 @@ function fromDatabaseRow(row) {
 async function fetchAllRows(table) {
   const rows = [];
   const pageSize = 1000;
+  // Supabase caps result sizes, so fetch every page in stable primary-key order.
   for (let offset = 0; ; offset += pageSize) {
     let query = supabase.from(table.name).select('*');
     for (const key of table.keys) query = query.order(key, { ascending: true });
@@ -99,6 +103,7 @@ function toDatabaseRow(row, collection) {
   return Object.fromEntries(Object.entries(row).map(([key, value]) => [overrides[key] || databaseFields[key] || key, value]));
 }
 
+// Load the signed-in profile, account status, ERP rows, and managed users as one workspace snapshot.
 async function loadWorkspace(userId) {
   const { data: profileRow, error: profileError } = await supabase
     .from('app_profiles').select('*').eq('id', userId).single();
@@ -264,6 +269,38 @@ function Modal({ title, subtitle, onClose, children, wide = false }) {
     </div>
   );
 }
+function PasswordField({ id, label, value, onChange, autoComplete = 'new-password', minLength, helpText }) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div className="form-group">
+      <label htmlFor={id}>{label}</label>
+      <div className="password-input">
+        <input
+          id={id}
+          type={visible ? 'text' : 'password'}
+          minLength={minLength}
+          autoComplete={autoComplete}
+          value={value}
+          onChange={onChange}
+          required
+        />
+        <button
+          className="password-toggle"
+          type="button"
+          aria-controls={id}
+          aria-label={`${visible ? 'Hide' : 'Show'} ${label.toLowerCase()}`}
+          aria-pressed={visible}
+          onClick={() => setVisible((current) => !current)}
+        >
+          {visible ? 'Hide' : 'Show'}
+        </button>
+      </div>
+      {helpText && <small className="form-help">{helpText}</small>}
+    </div>
+  );
+}
+
 function RegisterModal({ onClose, onRegister }) {
   const [message, setMessage] = useState(null);
   const [email, setEmail] = useState('');
@@ -275,6 +312,17 @@ function RegisterModal({ onClose, onRegister }) {
   async function submit(event) {
     event.preventDefault();
     setMessage(null);
+
+    if (!email.trim()) {
+      setMessage({ type: 'error', text: 'EMAIL IS REQUIRED' });
+      return;
+    }
+
+    if (!event.currentTarget.checkValidity()) {
+      event.currentTarget.reportValidity();
+      return;
+    }
+
     setBusy(true);
 
     try {
@@ -314,7 +362,7 @@ function RegisterModal({ onClose, onRegister }) {
       subtitle="Create your Hope, Inc. ERP account"
       onClose={onClose}
     >
-      <form className="modal-body" onSubmit={submit}>
+      <form className="modal-body" onSubmit={submit} noValidate>
         <Alert message={message} />
 
         <div className="role-note">
@@ -355,18 +403,13 @@ function RegisterModal({ onClose, onRegister }) {
           />
         </div>
 
-        <div className="form-group">
-          <label htmlFor="regPassword">Password</label>
-          <input
-            id="regPassword"
-            type="password"
-            minLength="8"
-            autoComplete="new-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </div>
+        <PasswordField
+          id="regPassword"
+          label="Password"
+          minLength="8"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+        />
 
         <button
           className="button button-primary button-full"
@@ -390,6 +433,17 @@ function LoginModal({ onClose, onSignIn, onRequestReset }) {
   async function submit(event) {
     event.preventDefault();
     setMessage(null);
+
+    if (!email.trim()) {
+      setMessage({ type: 'error', text: 'EMAIL IS REQUIRED' });
+      return;
+    }
+
+    if (!event.currentTarget.checkValidity()) {
+      event.currentTarget.reportValidity();
+      return;
+    }
+
     setBusy(true);
 
     try {
@@ -447,7 +501,7 @@ async function handleForgotPassword() {
       subtitle="Sign in to your account"
       onClose={onClose}
     >
-      <form className="modal-body" onSubmit={submit}>
+      <form className="modal-body" onSubmit={submit} noValidate>
         <Alert message={message} />
 
         <div className="role-note">
@@ -480,17 +534,13 @@ async function handleForgotPassword() {
           />
         </div>
 
-        <div className="form-group">
-          <label htmlFor="loginPassword">Password</label>
-          <input
-            id="loginPassword"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </div>
+        <PasswordField
+          id="loginPassword"
+          label="Password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+        />
 
         <button
           className="button button-primary button-full"
@@ -570,31 +620,21 @@ function ResetPasswordModal({ onUpdatePassword, onClose }) {
       <form className="modal-body" onSubmit={submit}>
         <Alert message={message} />
 
-        <div className="form-group">
-          <label htmlFor="newPassword">New Password</label>
-          <input
-            id="newPassword"
-            type="password"
-            autoComplete="new-password"
-            minLength="8"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </div>
+        <PasswordField
+          id="newPassword"
+          label="New Password"
+          minLength="8"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+        />
 
-        <div className="form-group">
-          <label htmlFor="confirmNewPassword">Confirm New Password</label>
-          <input
-            id="confirmNewPassword"
-            type="password"
-            autoComplete="new-password"
-            minLength="8"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            required
-          />
-        </div>
+        <PasswordField
+          id="confirmNewPassword"
+          label="Confirm New Password"
+          minLength="8"
+          value={confirmPassword}
+          onChange={(event) => setConfirmPassword(event.target.value)}
+        />
 
         <button
           className="button button-primary button-full"
@@ -789,7 +829,7 @@ function Overview({ user, users, data, onNavigate }) {
   );
 }
 
-function CustomersPage({ user, users, customers, onSave, onChangeState }) {
+function CustomersPage({ user, users, customers, onSave, onChangeState, onDeletePreview, onPermanentDelete }) {
   const admin = isAdmin(user);
   const canAdd = hasPermission(user, 'customers.add', users);
   const canEdit = hasPermission(user, 'customers.edit', users);
@@ -797,6 +837,7 @@ function CustomersPage({ user, users, customers, onSave, onChangeState }) {
   const [filter, setFilter] = useState('active');
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState(null);
+  const [deleting, setDeleting] = useState(null);
   const [error, setError] = useState('');
 
   const filteredCustomers = useMemo(() => {
@@ -915,6 +956,15 @@ function CustomersPage({ user, users, customers, onSave, onChangeState }) {
                           Delete
                         </button>
                       )}
+                      {canDelete && (
+                        <button className="table-action table-action-danger" onClick={() => setDeleting({
+                          table: 'customer',
+                          key: { custno: customer.custNo },
+                          label: customer.custName || customer.custNo,
+                        })}>
+                          Delete permanently
+                        </button>
+                      )}
                     </div>
                   </td>
                 )}
@@ -935,6 +985,7 @@ function CustomersPage({ user, users, customers, onSave, onChangeState }) {
           onSave={save}
         />
       )}
+      {deleting && <PermanentDeleteModal target={deleting} onClose={() => setDeleting(null)} onPreview={onDeletePreview} onDelete={onPermanentDelete} />}
     </section>
   );
 }
@@ -1008,6 +1059,13 @@ function recordKey(record, collection) {
   return COLLECTIONS[collection].key.map((key) => record[key]).join('|');
 }
 
+function recordDatabaseKey(record, collection) {
+  return Object.fromEntries(ERP_TABLES[collection].keys.map((field) => [
+    field,
+    record[DATABASE_FIELD_NAMES[field] || field],
+  ]));
+}
+
 function RecordModal({ collection, record, data, customers, error, onClose, onSave }) {
   const config = COLLECTIONS[collection];
   const [form, setForm] = useState(() => Object.fromEntries(
@@ -1072,11 +1130,12 @@ function RecordModal({ collection, record, data, customers, error, onClose, onSa
   );
 }
 
-function RecordsPage({ section, user, users, data, customers, onSave, onChangeState }) {
+function RecordsPage({ section, user, users, data, customers, onSave, onChangeState, onDeletePreview, onPermanentDelete }) {
   const [collection, setCollection] = useState(SECTION_TABS[section][0]);
   const [filter, setFilter] = useState('active');
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState(null);
+  const [deleting, setDeleting] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [error, setError] = useState('');
   const config = COLLECTIONS[collection];
@@ -1143,6 +1202,11 @@ function RecordsPage({ section, user, users, data, customers, onSave, onChangeSt
                   {record.isDeleted ? isAdmin(user) && <button className="table-action" onClick={() => onChangeState(collection, recordKey(record, collection), false)}>Restore</button>
                     : canEdit && <button className="table-action" onClick={() => { setEditing(record); setModalOpen(true); setError(''); }}>Edit</button>}
                   {!record.isDeleted && canDelete && <button className="table-action table-action-danger" onClick={() => window.confirm(`Mark this ${config.singular} inactive?`) && onChangeState(collection, recordKey(record, collection), true)}>Delete</button>}
+                  {canDelete && <button className="table-action table-action-danger" onClick={() => setDeleting({
+                    table: ERP_TABLES[collection].name,
+                    key: recordDatabaseKey(record, collection),
+                    label: `${config.singular} ${recordKey(record, collection)}`,
+                  })}>Delete permanently</button>}
                 </div></td>}
               </tr>
             ))}
@@ -1151,6 +1215,7 @@ function RecordsPage({ section, user, users, data, customers, onSave, onChangeSt
         </table></div>
       </section>
       {modalOpen && <RecordModal collection={collection} record={editing} data={data} customers={customers} error={error} onClose={() => { setEditing(null); setModalOpen(false); }} onSave={save} />}
+      {deleting && <PermanentDeleteModal target={deleting} onClose={() => setDeleting(null)} onPreview={onDeletePreview} onDelete={onPermanentDelete} />}
     </>
   );
 }
@@ -1448,7 +1513,7 @@ function UserManagement({ user, users, onSave, onDelete, onStatus, onPermissions
           <div className="form-row"><div className="form-group"><label htmlFor="user-first">First name</label><input id="user-first" value={form.firstName} onChange={(event) => setForm({ ...form, firstName: event.target.value })} required /></div>
             <div className="form-group"><label htmlFor="user-last">Last name</label><input id="user-last" value={form.lastName} onChange={(event) => setForm({ ...form, lastName: event.target.value })} required /></div></div>
           <div className="form-group"><label htmlFor="user-email">Email</label><input id="user-email" type="email" value={form.email} readOnly={Boolean(editing)} onChange={(event) => setForm({ ...form, email: event.target.value })} required /></div>
-          {!editing && <div className="form-group"><label htmlFor="user-password">Temporary password</label><input id="user-password" type="password" minLength="8" autoComplete="new-password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required /><small className="form-help">At least 8 characters. Share it securely with the new user.</small></div>}
+          {!editing && <PasswordField id="user-password" label="Temporary password" minLength="8" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} helpText="At least 8 characters. Share it securely with the new user." />}
           {isSuper && <div className="form-group"><label htmlFor="user-role">Role</label><select id="user-role" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })}><option value="user">User</option><option value="admin">Admin</option><option value="superadmin">Superadmin</option></select></div>}
           <div className="modal-actions"><button type="button" className="button button-outline" onClick={() => setEditing(null)}>Cancel</button><button className="button button-primary" type="submit">Save account</button></div>
         </form>
@@ -1467,7 +1532,7 @@ function UserManagement({ user, users, onSave, onDelete, onStatus, onPermissions
   );
 }
 
-function Dashboard({ user, users, customers, data, dataError, dataLoading, onReloadData, appError, clearError, onLogout, onCustomerSave, onCustomerState, onRecordSave, onRecordState, onUserSave, onUserDelete, onUserStatus, onUserPermissions }) {
+function Dashboard({ user, users, customers, data, dataError, dataLoading, onReloadData, appError, clearError, onLogout, onCustomerSave, onCustomerState, onRecordSave, onRecordState, onUserSave, onUserDelete, onUserStatus, onUserPermissions, onDeletePreview, onPermanentDelete }) {
   const [activePage, setActivePage] = useState('dashboard');
   const visibleModules = MODULES.filter((module) => {
     if (module.adminOnly) return isAdmin(user);
@@ -1497,20 +1562,22 @@ function Dashboard({ user, users, customers, data, dataError, dataLoading, onRel
           <button className="button button-ghost logout-button" onClick={onLogout}>Sign out</button></div>
       </header>
       <main className="dashboard-main">
-        <div className="page-heading"><div><span className="section-kicker">HOPE, INC. ERP / WORKSPACE</span><h1>{currentPage.label}</h1></div><span className="page-date">{new Intl.DateTimeFormat('en', { dateStyle: 'full' }).format(new Date())}</span></div>
-        <div className="local-demo-warning" role="note">
-          Supabase Auth secures your session. Database RLS grants each active account access only to the modules and actions assigned to it.
-          <button className="button button-outline" onClick={onReloadData} disabled={dataLoading}>{dataLoading ? 'Loading…' : 'Refresh ERP data'}</button>
+        <div key={currentPage.id} className="page-transition">
+          <div className="page-heading"><div><span className="section-kicker">HOPE, INC. ERP / WORKSPACE</span><h1>{currentPage.label}</h1></div><span className="page-date">{new Intl.DateTimeFormat('en', { dateStyle: 'full' }).format(new Date())}</span></div>
+          <div className="local-demo-warning" role="note">
+            Supabase Auth secures your session. Database RLS grants each active account access only to the modules and actions assigned to it.
+            <button className="button button-outline" onClick={onReloadData} disabled={dataLoading}>{dataLoading ? 'Loading…' : 'Refresh ERP data'}</button>
+          </div>
+          {dataError && <div className="app-notice"><Alert message={{ type: 'error', text: dataError }} /></div>}
+          {appError && <div className="app-notice"><Alert message={{ type: 'error', text: appError }} /><button className="icon-button" onClick={clearError} aria-label="Dismiss error">×</button></div>}
+          {currentPage.id === 'dashboard' && <Overview user={user} users={users} data={data} onNavigate={setActivePage} />}
+          {currentPage.id === 'customers' && <CustomersPage user={user} users={users} customers={customers} onSave={onCustomerSave} onChangeState={onCustomerState} onDeletePreview={onDeletePreview} onPermanentDelete={onPermanentDelete} />}
+          {['products', 'hr', 'sales'].includes(currentPage.id) && <RecordsPage key={currentPage.id} section={currentPage.id} user={user} users={users} data={data} customers={customers} onSave={onRecordSave} onChangeState={onRecordState} onDeletePreview={onDeletePreview} onPermanentDelete={onPermanentDelete} />}
+          {currentPage.id === 'reports' && <ReportsPage user={user} users={users} data={data} customers={customers} />}
+          {currentPage.id === 'users' && <UserManagement user={user} users={users} onSave={onUserSave} onDelete={onUserDelete} onStatus={onUserStatus} onPermissions={onUserPermissions} />}
+          {currentPage.id === 'audit' && <AuditLogPage />}
+          <footer className="dashboard-footer"><Brand compact /><span>© 2026 Hope, Inc. ERP · All rights reserved.</span></footer>
         </div>
-        {dataError && <div className="app-notice"><Alert message={{ type: 'error', text: dataError }} /></div>}
-        {appError && <div className="app-notice"><Alert message={{ type: 'error', text: appError }} /><button className="icon-button" onClick={clearError} aria-label="Dismiss error">×</button></div>}
-        {currentPage.id === 'dashboard' && <Overview user={user} users={users} data={data} onNavigate={setActivePage} />}
-        {currentPage.id === 'customers' && <CustomersPage user={user} users={users} customers={customers} onSave={onCustomerSave} onChangeState={onCustomerState} />}
-        {['products', 'hr', 'sales'].includes(currentPage.id) && <RecordsPage key={currentPage.id} section={currentPage.id} user={user} users={users} data={data} customers={customers} onSave={onRecordSave} onChangeState={onRecordState} />}
-        {currentPage.id === 'reports' && <ReportsPage user={user} users={users} data={data} customers={customers} />}
-        {currentPage.id === 'users' && <UserManagement user={user} users={users} onSave={onUserSave} onDelete={onUserDelete} onStatus={onUserStatus} onPermissions={onUserPermissions} />}
-        {currentPage.id === 'audit' && <AuditLogPage />}
-        <footer className="dashboard-footer"><Brand compact /><span>© 2026 Hope, Inc. ERP · All rights reserved.</span></footer>
       </main>
     </div>
   );
@@ -1679,6 +1746,31 @@ return () => {
     await reloadWorkspace();
   }
 
+  async function invokePermanentDelete(body) {
+    const { data: result, error } = await supabase.functions.invoke('permanently-delete', { body });
+    if (!error) {
+      return result && typeof result === 'object'
+        ? result
+        : { error: 'The permanent-delete service returned an empty response.' };
+    }
+    if (error.context && typeof error.context.json === 'function') {
+      const response = await error.context.json().catch(() => null);
+      if (response && typeof response.error === 'string') return { error: response.error };
+    }
+    return { error: error.message };
+  }
+
+  async function previewPermanentDelete(table, key) {
+    return invokePermanentDelete({ action: 'preview', table, key });
+  }
+
+  async function permanentlyDelete(table, key, selectedIds) {
+    const result = await invokePermanentDelete({ action: 'delete', table, key, selectedIds });
+    if (result.error) return result;
+    await reloadWorkspace();
+    return {};
+  }
+
   async function saveUser(form, editEmail) {
   if (!isAdmin(currentUser)) {
     return { error: 'Only administrators can manage accounts.' };
@@ -1837,6 +1929,8 @@ return () => {
         onUserDelete={deleteUser}
         onUserStatus={changeUserStatus}
         onUserPermissions={changeUserPermissions}
+        onDeletePreview={previewPermanentDelete}
+        onPermanentDelete={permanentlyDelete}
       />
     ) : loading || (authUser && !currentUser && !dataError) ? (
       <div className="storage-warning" role="status">

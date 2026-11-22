@@ -8,7 +8,9 @@
     "test:roles": "playwright test tests/roles.spec.cjs",
     "test:smoke": "playwright test tests/smoke.spec.cjs",
     "test:report": "playwright show-report",
-    "test:guide": "playwright test tests/guide-readonly.spec.cjs"
+    "test:guide": "playwright test tests/guide-readonly.spec.cjs",
+    "test:readiness": "node scripts/check_readiness.cjs",
+    "test:coverage": "python scripts/validate_coverage.py"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0"

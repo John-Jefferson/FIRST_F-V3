@@ -1,6 +1,7 @@
 begin;
 
 do $$
+-- Rebuild each table's read/write policies from the table-specific permission map.
 declare
   item record;
   select_policy text;

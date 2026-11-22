@@ -25,6 +25,19 @@ This document outlines the database security framework, access control policies,
   * Lets active users read, add, edit, or soft-delete records only when their profile has the matching permission.
   * Keeps admin and superadmin full access and continues to enforce these rules in PostgreSQL RLS.
 
+### 4. `20261122000000_controlled_permanent_deletion.sql`
+* **Purpose:** Keeps normal soft deletes independent of related history and adds a server-only transaction for confirmed permanent deletion.
+* **Key Mechanisms:**
+  * Removes the extra active-child soft-delete guard so parent records can be archived while history remains, matching HopeWeb.
+  * Keeps direct hard deletes blocked; only the service-role RPC can perform them after the Edge Function checks the selected record's delete permission.
+  * Records permanently removed records in `erp_permanent_delete_audit`.
+
+### 5. `20261122010000_allow_confirmed_payment_deletion.sql`
+* **Purpose:** Includes linked payment rows in the confirmed permanent-delete transaction.
+* **Key Mechanisms:**
+  * Deletes payments before their linked sales and records the payment count in the audit table.
+  * Restricts the wrapper RPC to `service_role`; callers must pass the Edge Function's permission and impact checks.
+
 ---
 
 ## Access Control Matrix
@@ -32,8 +45,8 @@ This document outlines the database security framework, access control policies,
 | Role | Read Access (`SELECT`) | Write Access (`INSERT`, `UPDATE`, `DELETE`) |
 | :--- | :--- | :--- |
 | **Anonymous / Public** | Blocked (`FALSE`) | Blocked (`FALSE`) |
-| **Active User** | Allowed only for assigned modules and reports | Allowed only for individually assigned actions; deletes are soft deletes |
-| **Administrator / Superadmin** | Allowed across ERP modules | Allowed across ERP modules; deletes are soft deletes |
+| **Active User** | Allowed only for assigned modules and reports | Allowed only for individually assigned actions; the selected record's delete permission covers its related rows |
+| **Administrator / Superadmin** | Allowed across ERP modules | Allowed across ERP modules; permanent deletion, including linked payments, is performed through the server-only confirmed flow |
 
 ---
 
