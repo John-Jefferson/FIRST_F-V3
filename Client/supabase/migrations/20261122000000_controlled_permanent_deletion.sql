@@ -44,6 +44,7 @@ create table if not exists public.erp_permanent_delete_audit (
   actor_id uuid references auth.users(id) on delete set null,
   table_name text not null,
   record_key jsonb not null,
+  deleted_count integer not null default 1,
   deleted_at timestamptz not null default now()
 );
 

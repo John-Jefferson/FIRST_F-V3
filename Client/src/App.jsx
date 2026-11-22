@@ -288,8 +288,8 @@ function PermanentDeleteModal({ target, onClose, onPreview, onDelete }) {
   }, [onPreview, target]);
 
   const ready = Boolean(impact)
-    && !impact.blockers.length
-    && impact.records.every((record) => record.canDelete && selected.includes(record.id));
+    && impact.records.every((record) => selected.includes(record.id));
+  const relatedRecordCount = impact?.records.reduce((count, record) => count + (record.count || 1), 0) || 0;
 
   async function confirmDelete() {
     setSaving(true);
@@ -312,23 +312,19 @@ function PermanentDeleteModal({ target, onClose, onPreview, onDelete }) {
         {busy ? <p role="status">Checking related records…</p> : impact && (
           <>
             <p className="delete-impact-summary">
-              The selected record and every checked related record will be permanently removed.
-              Database relationships require every listed row to be selected before the main record can be removed.
-              Payments are retained and prevent deletion of a linked sale.
+              Your permission to delete this record also authorizes deleting its related records. Select every listed row to continue.
+              Linked payment records will also be permanently deleted.
             </p>
-            {impact.blockers.map((blocker) => (
-              <Alert key={blocker.table} message={{ type: 'error', text: `${blocker.count} ${blocker.table} record(s): ${blocker.message}` }} />
-            ))}
             {impact.records.length > 0 && (
               <>
                 <div className="delete-impact-actions">
-                  <strong>{impact.records.length} related record(s)</strong>
+                  <strong>{relatedRecordCount} related record(s)</strong>
                   <button
                     className="text-button"
                     type="button"
-                    onClick={() => setSelected(impact.records.filter((record) => record.canDelete).map((record) => record.id))}
+                    onClick={() => setSelected(impact.records.map((record) => record.id))}
                   >
-                    Select all permitted
+                    Select all related records
                   </button>
                 </div>
                 <ul className="delete-impact-list">
@@ -338,16 +334,16 @@ function PermanentDeleteModal({ target, onClose, onPreview, onDelete }) {
                         <input
                           type="checkbox"
                           checked={selected.includes(record.id)}
-                          disabled={!record.canDelete || saving}
+                          disabled={saving}
                           onChange={(event) => setSelected((current) => event.target.checked
                             ? [...current, record.id]
                             : current.filter((id) => id !== record.id))}
                         />
                         <span>
                           <strong>{record.label}</strong>
-                          <small>{record.table} · {record.isDeleted ? 'already inactive' : 'active'}
-                            {!record.canDelete && ` · requires ${record.permission}`}
-                          </small>
+                          <small>{record.table} · {record.count
+                            ? `${record.count} payment record(s)`
+                            : record.isDeleted ? 'already inactive' : 'active'}</small>
                         </span>
                       </label>
                     </li>
@@ -355,11 +351,11 @@ function PermanentDeleteModal({ target, onClose, onPreview, onDelete }) {
                 </ul>
               </>
             )}
-            {!impact.records.length && !impact.blockers.length && <p>No related records were found.</p>}
+            {!impact.records.length && <p>No related records were found.</p>}
             <div className="modal-actions">
               <button className="button button-outline" type="button" onClick={onClose} disabled={saving}>Cancel</button>
               <button className="button button-danger" type="button" onClick={confirmDelete} disabled={!ready || saving}>
-                {saving ? 'Deleting…' : `Permanently delete ${impact.records.length + 1} record(s)`}
+                {saving ? 'Deleting…' : `Permanently delete ${relatedRecordCount + 1} record(s)`}
               </button>
             </div>
           </>

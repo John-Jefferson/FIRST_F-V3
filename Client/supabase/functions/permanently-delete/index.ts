@@ -35,13 +35,12 @@ type RecordKey = Record<string, string | number>;
 type Profile = { role: string; status: string; permissions: string[] | null };
 type ImpactRecord = {
   id: string;
-  table: TableName;
+  table: TableName | 'payment';
   key: RecordKey;
   label: string;
-  isDeleted: boolean;
+  isDeleted: boolean | null;
   depth: number;
-  permission: string;
-  canDelete: boolean;
+  count?: number;
 };
 
 function jsonResponse(status: number, body: Record<string, unknown>) {
@@ -105,7 +104,6 @@ async function loadImpact(client: ReturnType<typeof createClient>, table: TableN
     canDelete: canDelete(profile, table),
   };
   const records: ImpactRecord[] = [];
-  const blockers: { table: 'payment'; count: number; message: string }[] = [];
   const visited = new Set<string>();
   const queue = [{ table, key: rootKey, depth: 0 }];
 
@@ -116,11 +114,20 @@ async function loadImpact(client: ReturnType<typeof createClient>, table: TableN
         .select('transno', { count: 'exact', head: true })
         .eq('transno', parent.key.transno);
       if (error) throw new Error(`Could not check linked payment records: ${error.message}`);
-      if (count) blockers.push({
-        table: 'payment',
-        count,
-        message: 'Payment records are retained; this sale cannot be permanently deleted while they exist.',
-      });
+      if (count) {
+        if (count > MAX_IMPACT_ROWS || records.length + count > MAX_IMPACT_ROWS) {
+          throw new Error(`This record has more than ${MAX_IMPACT_ROWS} related records. Ask an administrator to review it; nothing was deleted.`);
+        }
+        records.push({
+          id: JSON.stringify({ table: 'payment', key: { transno: parent.key.transno } }),
+          table: 'payment',
+          key: { transno: parent.key.transno },
+          label: `Payments for Transaction ${parent.key.transno}`,
+          isDeleted: null,
+          depth: parent.depth + 1,
+          count,
+        });
+      }
     }
 
     for (const relationship of RELATIONSHIPS.filter((item) => item.parent === parent.table)) {
@@ -146,14 +153,12 @@ async function loadImpact(client: ReturnType<typeof createClient>, table: TableN
           label: rowLabel(child, row, childKey),
           isDeleted: Boolean(row.is_deleted),
           depth: parent.depth + 1,
-          permission: TABLES[child].permission,
-          canDelete: canDelete(profile, child),
         });
         queue.push({ table: child, key: childKey, depth: parent.depth + 1 });
       }
     }
   }
-  return { root: rootRecord, records, blockers };
+  return { root: rootRecord, records };
 }
 
 Deno.serve(async (request: Request) => {
@@ -199,23 +204,17 @@ Deno.serve(async (request: Request) => {
     if (payload.action === 'preview') return jsonResponse(200, impact);
     if (payload.action !== 'delete') return jsonResponse(400, { error: 'Unsupported action.' });
 
-    if (impact.blockers.length) {
-      return jsonResponse(409, { error: impact.blockers.map((item) => `${item.count} ${item.table} record(s) must be retained.`).join(' ') });
-    }
     const selectedIds = Array.isArray(payload.selectedIds) ? payload.selectedIds : [];
     if (selectedIds.length !== impact.records.length || impact.records.some((item) => !selectedIds.includes(item.id))) {
       return jsonResponse(409, { error: 'Related records changed or were not all selected. Review the impact list again.' });
     }
-    const unauthorized = impact.records.find((item) => !item.canDelete);
-    if (unauthorized) {
-      return jsonResponse(403, { error: `Your account needs ${unauthorized.permission} permission to remove the linked ${unauthorized.table} record.` });
-    }
-
     const records = [
-      ...impact.records.map(({ table: recordTable, key: recordKey, depth }) => ({ table: recordTable, key: recordKey, depth })),
+      ...impact.records
+        .filter(({ table: recordTable }) => recordTable !== 'payment')
+        .map(({ table: recordTable, key: recordKey, depth }) => ({ table: recordTable, key: recordKey, depth })),
       { table, key, depth: 0 },
     ];
-    const { data: deletedCount, error: deleteError } = await adminClient.rpc('hard_delete_erp_records', {
+    const { data: deletedCount, error: deleteError } = await adminClient.rpc('hard_delete_erp_records_with_payments', {
       p_actor: authData.user.id,
       p_records: records,
     });

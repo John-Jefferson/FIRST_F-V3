@@ -29,8 +29,14 @@ This document outlines the database security framework, access control policies,
 * **Purpose:** Keeps normal soft deletes independent of related history and adds a server-only transaction for confirmed permanent deletion.
 * **Key Mechanisms:**
   * Removes the extra active-child soft-delete guard so parent records can be archived while history remains, matching HopeWeb.
-  * Keeps direct hard deletes blocked; only the service-role RPC can perform them after the Edge Function checks per-record delete permissions.
-  * Records each permanently removed key in `erp_permanent_delete_audit`. Linked legacy payment rows are not deletable through this flow and block deletion of their sale.
+  * Keeps direct hard deletes blocked; only the service-role RPC can perform them after the Edge Function checks the selected record's delete permission.
+  * Records permanently removed records in `erp_permanent_delete_audit`.
+
+### 5. `20261122010000_allow_confirmed_payment_deletion.sql`
+* **Purpose:** Includes linked payment rows in the confirmed permanent-delete transaction.
+* **Key Mechanisms:**
+  * Deletes payments before their linked sales and records the payment count in the audit table.
+  * Restricts the wrapper RPC to `service_role`; callers must pass the Edge Function's permission and impact checks.
 
 ---
 
@@ -39,8 +45,8 @@ This document outlines the database security framework, access control policies,
 | Role | Read Access (`SELECT`) | Write Access (`INSERT`, `UPDATE`, `DELETE`) |
 | :--- | :--- | :--- |
 | **Anonymous / Public** | Blocked (`FALSE`) | Blocked (`FALSE`) |
-| **Active User** | Allowed only for assigned modules and reports | Allowed only for individually assigned actions; permanent deletion also requires permission for every selected related row |
-| **Administrator / Superadmin** | Allowed across ERP modules | Allowed across ERP modules; permanent deletion is performed through the server-only confirmed flow |
+| **Active User** | Allowed only for assigned modules and reports | Allowed only for individually assigned actions; the selected record's delete permission covers its related rows |
+| **Administrator / Superadmin** | Allowed across ERP modules | Allowed across ERP modules; permanent deletion, including linked payments, is performed through the server-only confirmed flow |
 
 ---
 
